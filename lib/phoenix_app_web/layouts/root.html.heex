@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" class="[scrollbar-gutter:stable]">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="csrf-token" content={Phoenix.HTML.Tag.csrf_token_value()} />
+    <.live_title suffix=" - Mother Fucker">
+      <%= assigns[:page_title] || "Phoenix CMS Bitches" %>
+    </.live_title>
+    <link phx-track-static rel="stylesheet" href={~p"/assets/app.css"} />
+    <script defer phx-track-static type="text/javascript" src={~p"/assets/app.js"}>
+    </script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- Impact.js Game Engine -->
+    <script type="text/javascript">
+      // Set the Impact.js base path before loading the engine
+      window.ImpactPrefix = '/impact/';
+    </script>
+    <script type="text/javascript" src={~p"/impact/lib/impact/impact.js"}></script>
+    <script type="text/javascript" src={~p"/impact/lib/game/main.js"}></script>
+  </head>
+  <body class="bg-black antialiased">
+    <%= @inner_content %>
+  </body>
+</html>
