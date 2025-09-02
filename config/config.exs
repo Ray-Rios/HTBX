@@ -76,6 +76,8 @@ config :phoenix_app, PhoenixApp.Repo,
   migration_primary_key: [type: :bigserial],
   migration_lock: false
 
+
+
 # ----------------------------
 # Import environment-specific configs
 # ----------------------------

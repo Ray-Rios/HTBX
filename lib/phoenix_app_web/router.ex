@@ -123,6 +123,17 @@ defmodule PhoenixAppWeb.Router do
   end
 
   # --------------------
+  # Game CMS Admin
+  # --------------------
+  scope "/cms", PhoenixAppWeb do
+    pipe_through :browser
+
+    live_session :cms_admin do
+      live "/", AdminCmsLive, :index
+    end
+  end
+
+  # --------------------
   # Quest Level Editor
   # --------------------
   scope "/", PhoenixAppWeb do
@@ -147,24 +158,27 @@ defmodule PhoenixAppWeb.Router do
   scope "/api/game", PhoenixAppWeb do
     pipe_through :api
 
-    # Game Authentication (public endpoints)
-    post "/login", GameAuthController, :login
-    post "/register", GameAuthController, :register
-    post "/refresh_token", GameAuthController, :refresh_token
-    
-    # New unified authentication endpoints
+    # Public game endpoints
     post "/auth", Api.GameAuthController, :authenticate
     post "/verify", Api.GameAuthController, :verify_token
-    get "/users", Api.GameAuthController, :list_users
+    get "/leaderboard", Api.GameController, :leaderboard
+    get "/stats", Api.GameController, :stats
 
-    # Protected game routes
+    # Protected game routes (require authentication)
     pipe_through :game_auth
 
-    get "/player/profile", GamePlayerController, :profile
-    put "/player/profile", GamePlayerController, :update_profile
-    get "/player/avatar", GamePlayerController, :avatar
-    put "/player/avatar", GamePlayerController, :update_avatar
-    get "/player/stats", GamePlayerController, :stats
-    put "/player/stats", GamePlayerController, :update_stats
+    # Player profile and stats
+    get "/profile", Api.GameController, :profile
+    
+    # Game sessions
+    post "/session/start", Api.GameController, :start_session
+    put "/session/:id/update", Api.GameController, :update_session
+    post "/session/:id/heartbeat", Api.GameController, :heartbeat
+    
+    # Game events
+    post "/event", Api.GameController, :create_event
+    
+    # Admin-only endpoints
+    get "/users", Api.GameAuthController, :list_users
   end
 end

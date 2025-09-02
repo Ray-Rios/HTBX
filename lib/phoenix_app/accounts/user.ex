@@ -30,6 +30,11 @@ defmodule PhoenixApp.Accounts.User do
     has_many :posts, PhoenixApp.Content.Post
     has_many :files, PhoenixApp.Files.UserFile
     has_many :chat_messages, PhoenixApp.Chat.Message
+    
+    # Game relationships
+    has_many :game_sessions, PhoenixApp.Game.GameSession
+    has_many :game_events, PhoenixApp.Game.GameEvent, foreign_key: :player_id
+    has_one :player_stats, PhoenixApp.Game.PlayerStats
 
     timestamps(type: :utc_datetime)
   end

@@ -28,6 +28,9 @@ services:
       timeout: 3s
       retries: 5
 
+
+
+  # Phoenix Web Service with Built-in CMS
   web:
     build:
       context: .
@@ -39,15 +42,18 @@ services:
     environment:
       - GAME_SERVER_URL=http://game_service:8080
     ports:
-      - "4000:4000"
+      - "4000:4000"  # Phoenix web interface + CMS at /cms
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
     volumes:
-      - /app/priv/static/assets
+      - .:/app:rw
+      - /app/deps
+      - /app/_build
     command: /usr/local/bin/start.sh
+    restart: unless-stopped
 
   # New Rust Game Service
   game_service:

@@ -1,108 +1,217 @@
-defmodule PhoenixAppWeb.GameController do
+defmodule PhoenixAppWeb.Api.GameController do
   use PhoenixAppWeb, :controller
+  alias PhoenixApp.{Accounts, Game}
 
-  alias PhoenixApp.Accounts
-  alias PhoenixApp.Accounts.User
+  # GET /api/game/profile
+  def profile(conn, _params) do
+    user = conn.assigns.current_user
+    
+    # Get or create player stats
+    stats = Game.get_or_create_player_stats(user)
+    
+    # Get active session if any
+    active_session = Game.get_active_session_for_user(user)
+    
+    conn
+    |> put_status(:ok)
+    |> json(%{
+      success: true,
+      user: %{
+        id: user.id,
+        name: user.name,
+        email: user.email
+      },
+      stats: %{
+        total_score: stats.total_score,
+        total_playtime: stats.total_playtime,
+        games_played: stats.games_played,
+        highest_level: stats.highest_level,
+        achievements: stats.achievements
+      },
+      active_session: if active_session do
+        %{
+          id: active_session.id,
+          level: active_session.level,
+          score: active_session.score,
+          health: active_session.health,
+          position: %{
+            x: active_session.player_x,
+            y: active_session.player_y,
+            z: active_session.player_z
+          }
+        }
+      else
+        nil
+      end
+    })
+  end
 
-  # -------------------------
-  # Register user
-  # POST /api/game/register
-  # -------------------------
-  def register(conn, %{"email" => email, "name" => name, "password" => password}) do
-    case Accounts.register_user(%{"email" => email, "name" => name, "password" => password}) do
-      {:ok, user} ->
-        json(conn, %{status: "success", user: sanitize_user(user)})
-
+  # POST /api/game/session/start
+  def start_session(conn, params) do
+    user = conn.assigns.current_user
+    
+    case Game.create_game_session(user, params) do
+      {:ok, session} ->
+        conn
+        |> put_status(:created)
+        |> json(%{
+          success: true,
+          session: %{
+            id: session.id,
+            session_token: session.session_token,
+            level: session.level,
+            score: session.score,
+            health: session.health
+          }
+        })
+      
       {:error, changeset} ->
         conn
         |> put_status(:unprocessable_entity)
-        |> json(%{status: "error", errors: format_errors(changeset)})
+        |> json(%{
+          success: false,
+          errors: format_changeset_errors(changeset)
+        })
     end
   end
 
-  # -------------------------
-  # Login
-  # POST /api/game/login
-  # -------------------------
-  def login(conn, %{"email" => email, "password" => password}) do
-    case Accounts.get_user_by_email(email) do
+  # PUT /api/game/session/:id/update
+  def update_session(conn, %{"id" => session_id} = params) do
+    user = conn.assigns.current_user
+    user_id = user.id
+    
+    # Ensure user owns this session
+    case Game.get_game_session!(session_id) do
+      %{user_id: ^user_id} = session ->
+        case Game.update_game_session(session, params) do
+          {:ok, updated_session} ->
+            conn
+            |> put_status(:ok)
+            |> json(%{
+              success: true,
+              session: %{
+                id: updated_session.id,
+                level: updated_session.level,
+                score: updated_session.score,
+                health: updated_session.health,
+                position: %{
+                  x: updated_session.player_x,
+                  y: updated_session.player_y,
+                  z: updated_session.player_z
+                }
+              }
+            })
+          
+          {:error, changeset} ->
+            conn
+            |> put_status(:unprocessable_entity)
+            |> json(%{
+              success: false,
+              errors: format_changeset_errors(changeset)
+            })
+        end
+      
+      _ ->
+        conn
+        |> put_status(:forbidden)
+        |> json(%{success: false, error: "Access denied"})
+    end
+  end
+
+  # POST /api/game/session/:id/heartbeat
+  def heartbeat(conn, %{"id" => session_id}) do
+    user = conn.assigns.current_user
+    user_id = user.id
+    
+    case Game.get_game_session!(session_id) do
+      %{user_id: ^user_id} = session ->
+        case Game.heartbeat_session(session) do
+          {:ok, _session} ->
+            conn
+            |> put_status(:ok)
+            |> json(%{success: true})
+          
+          {:error, _} ->
+            conn
+            |> put_status(:unprocessable_entity)
+            |> json(%{success: false, error: "Failed to update heartbeat"})
+        end
+      
+      _ ->
+        conn
+        |> put_status(:forbidden)
+        |> json(%{success: false, error: "Access denied"})
+    end
+  end
+
+  # POST /api/game/event
+  def create_event(conn, %{"event_type" => event_type} = params) do
+    user = conn.assigns.current_user
+    
+    # Get active session
+    case Game.get_active_session_for_user(user) do
       nil ->
         conn
-        |> put_status(:unauthorized)
-        |> json(%{status: "error", message: "Invalid credentials"})
-
-      %User{} = user ->
-        if Accounts.check_password(user, password) do
-          json(conn, %{status: "success", user: sanitize_user(user)})
-        else
-          conn
-          |> put_status(:unauthorized)
-          |> json(%{status: "error", message: "Invalid credentials"})
+        |> put_status(:bad_request)
+        |> json(%{success: false, error: "No active game session"})
+      
+      session ->
+        event_attrs = %{
+          event_type: event_type,
+          event_data: params["event_data"] || %{},
+          client_timestamp: params["client_timestamp"]
+        }
+        
+        case Game.create_game_event(session, user, event_attrs) do
+          {:ok, event} ->
+            conn
+            |> put_status(:created)
+            |> json(%{
+              success: true,
+              event: %{
+                id: event.id,
+                event_type: event.event_type,
+                server_timestamp: event.server_timestamp
+              }
+            })
+          
+          {:error, changeset} ->
+            conn
+            |> put_status(:unprocessable_entity)
+            |> json(%{
+              success: false,
+              errors: format_changeset_errors(changeset)
+            })
         end
     end
   end
 
-  # -------------------------
-  # Update profile
-  # PUT /api/game/profile/:id
-  # -------------------------
-  def update_profile(conn, %{"id" => id, "email" => email, "name" => name}) do
-    user = Accounts.get_user!(id)
-
-    case Accounts.update_profile(user, %{"email" => email, "name" => name}) do
-      {:ok, user} ->
-        json(conn, %{status: "success", user: sanitize_user(user)})
-
-      {:error, changeset} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> json(%{status: "error", errors: format_errors(changeset)})
-    end
+  # GET /api/game/leaderboard
+  def leaderboard(conn, params) do
+    limit = String.to_integer(params["limit"] || "10")
+    leaderboard = Game.get_leaderboard(limit)
+    
+    conn
+    |> put_status(:ok)
+    |> json(%{
+      success: true,
+      leaderboard: leaderboard
+    })
   end
 
-  # -------------------------
-  # Update password
-  # PUT /api/game/password/:id
-  # -------------------------
-  def update_password(conn, %{"id" => id, "password" => password}) do
-    user = Accounts.get_user!(id)
-
-    case Accounts.update_password(user, %{"password" => password}) do
-      {:ok, _user} ->
-        json(conn, %{status: "success", message: "Password updated"})
-
-      {:error, changeset} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> json(%{status: "error", errors: format_errors(changeset)})
-    end
+  # GET /api/game/stats
+  def stats(conn, _params) do
+    stats = Game.get_game_stats()
+    
+    conn
+    |> put_status(:ok)
+    |> json(%{
+      success: true,
+      stats: stats
+    })
   end
 
-  # -------------------------
-  # List all users (admin/debug)
-  # GET /api/game/users
-  # -------------------------
-  def list_users(conn, _params) do
-    users = Accounts.list_users()
-    json(conn, %{status: "success", users: Enum.map(users, &sanitize_user/1)})
-  end
-
-  # -------------------------
-  # Helpers
-  # -------------------------
-  defp sanitize_user(%User{} = user) do
-    %{
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      avatar_url: user.avatar_url,
-      is_online: user.is_online,
-      is_admin: user.is_admin,
-      status: user.status
-    }
-  end
-
-  defp format_errors(changeset) do
+  defp format_changeset_errors(changeset) do
     Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
       Enum.reduce(opts, msg, fn {key, value}, acc ->
         String.replace(acc, "%{#{key}}", to_string(value))
