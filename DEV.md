@@ -68,6 +68,26 @@ curl http://localhost:9070/api/players
 curl http://localhost:9070/status
 
 
+mv -v .git .git_old &&            # Remove old Git files
+git init &&                       # Initialise new repository
+git remote add origin "${url}" && # Link to old repository
+git fetch &&                      # Get old history
+# Note that some repositories use 'master' in place of 'main'. Change the following line if your remote uses 'master'.
+git reset origin/main --mixed     # Force update to old history.
+This leaves your working tree intact, and only affects Git's bookkeeping.
+
+
+
+
+
+
+
+
+
+
+
+
+
 Example Migrations
 # Users table
 mix ecto.gen.migration create_users

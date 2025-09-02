@@ -46,7 +46,7 @@ services:
     profiles:
       - dev
 
-  # Override pixel streaming to use built game
+  # Comment this section out to disable pixel streaming
   pixel_streaming:
     build:
       context: ./rust_game

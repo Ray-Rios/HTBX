@@ -13,6 +13,7 @@ defmodule PhoenixAppWeb.Router do
 
   pipeline :api do
     plug :accepts, ["json"]
+    plug :fetch_session
   end
 
   pipeline :game_auth do
@@ -37,8 +38,8 @@ defmodule PhoenixAppWeb.Router do
     live "/register", AuthLive, :register
 
     # Public blog/shop/chat/etc.
-    live "/blog", BlogLive, :index
-    live "/blog/:slug", BlogLive, :show
+    live "/blog", CMS.BlogLive, :index
+    live "/blog/:slug", CMS.BlogLive, :show
     live "/shop", ShopLive, :index
     live "/shop/category/:slug", ShopLive, :category
     live "/shop/product/:id", ShopLive, :product
@@ -55,12 +56,7 @@ defmodule PhoenixAppWeb.Router do
     live "/galaxy-demo", DemoGalaxyLive, :index
 
 
-    # Pages
-    live "/pages", PageLive.Index, :index
-    live "/pages/new", PageLive.Index, :new
-    live "/pages/:id/edit", PageLive.Index, :edit
-    live "/pages/:id", PageLive.Show, :show
-    live "/pages/:id/show/edit", PageLive.Show, :edit
+
   end
   end
 
@@ -114,43 +110,23 @@ defmodule PhoenixAppWeb.Router do
       live "/services", AdminLive.ServicesLive, :index
     end
 
-    # Impact/Level Designer (Weltmeister)
-    get "/editor", PageController, :weltmeister
-    get "/levels", PageController, :list_levels
-    get "/levels/:name", PageController, :get_level
-    post "/levels/:name", PageController, :save_level
-    put "/levels/:name", PageController, :save_level
+
   end
 
   # --------------------
-  # Game CMS Admin
+  # WordPress CMS Admin
   # --------------------
   scope "/cms", PhoenixAppWeb do
     pipe_through :browser
 
     live_session :cms_admin do
-      live "/", AdminCmsLive, :index
+      live "/admin", CMS.AdminLive, :index
     end
   end
 
-  # --------------------
-  # Quest Level Editor
-  # --------------------
-  scope "/", PhoenixAppWeb do
-    pipe_through :browser
 
-    get "/quest/editor", QuestController, :editor
-  end
 
-  # --------------------
-  # Static Impact.js Game Files
-  # --------------------
-  scope "/", PhoenixAppWeb do
-    pipe_through :browser
-    
-    # Serve Impact.js game files from priv/static
-    get "/impact/*path", PageController, :serve_impact_file
-  end
+
 
   # --------------------
   # Game API
@@ -159,6 +135,8 @@ defmodule PhoenixAppWeb.Router do
     pipe_through :api
 
     # Public game endpoints
+    post "/register", Api.GameAuthController, :register
+    post "/login", Api.GameAuthController, :login
     post "/auth", Api.GameAuthController, :authenticate
     post "/verify", Api.GameAuthController, :verify_token
     get "/leaderboard", Api.GameController, :leaderboard
@@ -180,5 +158,21 @@ defmodule PhoenixAppWeb.Router do
     
     # Admin-only endpoints
     get "/users", Api.GameAuthController, :list_users
+  end
+
+  # --------------------
+  # GraphQL API
+  # --------------------
+  scope "/api" do
+    pipe_through :api
+
+    forward "/graphql", Absinthe.Plug,
+      schema: PhoenixAppWeb.Schema
+
+    if Mix.env() == :dev do
+      forward "/graphiql", Absinthe.Plug.GraphiQL,
+        schema: PhoenixAppWeb.Schema,
+        interface: :simple
+    end
   end
 end

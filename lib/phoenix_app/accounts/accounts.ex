@@ -1,7 +1,6 @@
 defmodule PhoenixApp.Accounts do
   alias PhoenixApp.Repo
   alias PhoenixApp.Accounts.User
-  alias Bcrypt
 
   # ---------------------
   # List all users
@@ -52,7 +51,13 @@ defmodule PhoenixApp.Accounts do
   # Check user password
   # ---------------------
   def check_password(%User{password_hash: hash}, password) when is_binary(password) do
-    Bcrypt.verify_pass(password, hash)
+    # Handle case where hash might be a list (pbkdf2_elixir version issue)
+    hash_string = case hash do
+      h when is_binary(h) -> h
+      h when is_list(h) -> List.to_string(h)
+      h -> to_string(h)
+    end
+    Pbkdf2.verify_pass(password, hash_string)
   end
 
   # ---------------------

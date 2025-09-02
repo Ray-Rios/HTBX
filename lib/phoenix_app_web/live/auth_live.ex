@@ -9,13 +9,19 @@ defmodule PhoenixAppWeb.AuthLive do
   def mount(_params, session, socket) do
     current_user = maybe_fetch_user(session["user_id"])
 
-    {:ok,
-     assign(socket,
-       current_user: current_user,
-       form: to_form(%{}, as: "user"),
-       errors: [],
-       action: :login
-     )}
+    # If user is already logged in, redirect to dashboard
+    if current_user do
+      {:ok, redirect(socket, to: ~p"/dashboard")}
+    else
+      {:ok,
+       assign(socket,
+         current_user: current_user,
+         form: to_form(%{}, as: "user"),
+         errors: [],
+         action: :login,
+         loading: false
+       )}
+    end
   end
 
   # ----------------
@@ -38,6 +44,9 @@ defmodule PhoenixAppWeb.AuthLive do
   # Handle submit
   # ----------------
   def handle_event("submit", %{"user" => user_params}, socket) do
+    # Set loading state
+    socket = assign(socket, loading: true)
+    
     case socket.assigns.action do
       :login -> do_login(socket, user_params)
       :register -> do_register(socket, user_params)
@@ -50,9 +59,12 @@ defmodule PhoenixAppWeb.AuthLive do
   defp do_login(socket, %{"email" => email, "password" => password} = _params) do
     case Accounts.authenticate_user(email, password) do
       {:ok, user} ->
+        # Set the session directly in the socket
         {:noreply,
          socket
+         |> assign(loading: false)
          |> put_flash(:info, "Welcome back, #{user.email}!")
+         |> assign(current_user: user)
          |> redirect(external: "/auth/login_success?user_id=#{user.id}")}
 
       {:error, _reason} ->
@@ -61,6 +73,7 @@ defmodule PhoenixAppWeb.AuthLive do
 
         {:noreply,
          socket
+         |> assign(loading: false)
          |> put_flash(:error, "Invalid email or password")
          |> assign(form: form, errors: ["Invalid email or password"])}
     end
@@ -76,7 +89,9 @@ defmodule PhoenixAppWeb.AuthLive do
       {:ok, user} ->
         {:noreply,
          socket
+         |> assign(loading: false)
          |> put_flash(:info, "Account created successfully! Welcome, #{user.email}!")
+         |> assign(current_user: user)
          |> redirect(external: "/auth/login_success?user_id=#{user.id}")}
 
       {:error, changeset} ->
@@ -88,6 +103,7 @@ defmodule PhoenixAppWeb.AuthLive do
 
         {:noreply,
          socket
+         |> assign(loading: false)
          |> put_flash(:error, "Please fix the errors below")
          |> assign(errors: errors)}
     end
@@ -153,9 +169,20 @@ defmodule PhoenixAppWeb.AuthLive do
             
             <button 
               type="submit"
-              class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium py-3 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105"
+              disabled={@loading}
+              class={"w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium py-3 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 #{if @loading, do: "opacity-50 cursor-not-allowed", else: ""}"}
             >
-              <%= if @action == :login, do: "Sign In", else: "Create Account" %>
+              <%= if @loading do %>
+                <div class="flex items-center justify-center">
+                  <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <%= if @action == :login, do: "Signing In...", else: "Creating Account..." %>
+                </div>
+              <% else %>
+                <%= if @action == :login, do: "Sign In", else: "Create Account" %>
+              <% end %>
             </button>
           </.form>
           

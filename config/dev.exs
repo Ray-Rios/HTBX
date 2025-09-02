@@ -18,7 +18,7 @@ config :phoenix_app, PhoenixAppWeb.Endpoint,
   debug_errors: true,
   secret_key_base: "dev_secret_key_base_placeholder",
   watchers: [
-    npm: ["run", "watch", cd: Path.expand("../assets", __DIR__)]
+    # npm: ["run", "watch", cd: Path.expand("../assets", __DIR__)]
   ],
   live_reload: [
     patterns: [

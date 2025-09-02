@@ -18,7 +18,7 @@ defmodule PhoenixAppWeb.SimpleGalaxyLive do
         <div class="bg-black/30 backdrop-blur-sm rounded-xl p-8 border border-blue-500/20">
           <div class="text-center text-white">
             <p class="text-xl mb-4">Welcome to the Galaxy!</p>
-            <p class="text-blue-200">Impact.js integration coming soon...</p>
+            <p class="text-blue-200">Galaxy visualization coming soon...</p>
             
             <!-- Simple animated stars -->
             <div class="relative mt-8 h-64 bg-gradient-to-b from-purple-900 to-black rounded-lg overflow-hidden">

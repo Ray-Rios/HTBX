@@ -20,7 +20,7 @@ defmodule PhoenixAppWeb.DemoGalaxyLive do
             🌌 Galaxy Interactive Demo
           </h1>
           <p class="text-blue-200 text-lg mb-6">
-            Experience the relaxing galaxy visualization powered by Phoenix LiveView + Impact.js
+            Experience the relaxing galaxy visualization powered by Phoenix LiveView
           </p>
           
           <!-- Demo Controls -->

@@ -18,6 +18,9 @@ let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("
 // Import quest engine
 import "./quest_engine";
 
+// Import rich editor components
+import { RichEditor } from "./rich_editor";
+
 // Quest Game Hook
 const QuestGame = {
   mounted() {
@@ -45,9 +48,10 @@ const QuestGame = {
   }
 };
 
-// Clean hooks object with quest game
+// Clean hooks object with quest game and CMS components
 let Hooks = {
-  QuestGame
+  QuestGame,
+  RichEditor
 };
 
 let liveSocket = new LiveSocket("/live", Socket, {

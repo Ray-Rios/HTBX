@@ -2,7 +2,6 @@ defmodule PhoenixApp.Accounts.User do
   use Ecto.Schema
   use Arc.Ecto.Schema
   import Ecto.Changeset
-  alias Bcrypt
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -102,7 +101,7 @@ defmodule PhoenixApp.Accounts.User do
 
   # Password validation
   def valid_password?(%__MODULE__{password_hash: hash}, password) when is_binary(password) do
-    Bcrypt.verify_pass(password, hash)
+    Pbkdf2.verify_pass(password, hash)
   end
 
   def valid_password?(_, _), do: false
@@ -119,7 +118,12 @@ defmodule PhoenixApp.Accounts.User do
   # Internal helper
   defp put_password_hash(changeset) do
     if pwd = get_change(changeset, :password) do
-      put_change(changeset, :password_hash, Bcrypt.hash_pwd_salt(pwd))
+      hash = case Pbkdf2.hash_pwd_salt(pwd) do
+        hash when is_binary(hash) -> hash
+        hash when is_list(hash) -> List.to_string(hash)
+        hash -> to_string(hash)
+      end
+      put_change(changeset, :password_hash, hash)
     else
       changeset
     end

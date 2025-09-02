@@ -8,7 +8,7 @@ The galaxy routes (`/galaxy` and `/galaxy-demo`) are defined in the router but n
 
 1. ✅ **Router Configuration** - Routes are properly defined in `lib/phoenix_app_web/router.ex`
 2. ✅ **LiveView Modules** - Created `SimpleGalaxyLive` and `DemoGalaxyLive` modules
-3. ✅ **Impact.js Files** - Added Impact.js script loading to root layout
+3. ✅ **JavaScript Files** - Added JavaScript loading to root layout
 4. ❌ **Route Compilation** - Routes not appearing in route list
 
 ## Debugging Steps:
@@ -31,7 +31,7 @@ Ensure all required dependencies are available.
 
 ## Working Solution:
 
-Create a minimal working galaxy page first, then gradually add Impact.js integration.
+Create a minimal working galaxy page first, then gradually add JavaScript integration.
 
 ### Minimal Galaxy Route Test:
 

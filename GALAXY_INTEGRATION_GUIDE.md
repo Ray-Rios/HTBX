@@ -1,14 +1,14 @@
 # Galaxy Integration Guide 🌌
 
-This guide explains how to integrate the relaxing galaxy visualization system with Phoenix LiveView and Impact.js.
+This guide explains how to integrate the relaxing galaxy visualization system with Phoenix LiveView and JavaScript.
 
 ## Architecture Overview
 
 The galaxy system consists of three main components:
 
 1. **Phoenix LiveView** (`GalaxyLive`) - Manages state and real-time updates
-2. **Impact.js Game Engine** - Handles rendering and animations
-3. **JavaScript Hook** (`GalaxyEngine`) - Bridges LiveView and Impact.js
+2. **JavaScript Game Engine** - Handles rendering and animations
+3. **JavaScript Hook** (`GalaxyEngine`) - Bridges LiveView and JavaScript
 
 ## Components Created
 

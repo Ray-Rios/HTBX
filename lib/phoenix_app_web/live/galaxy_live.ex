@@ -23,7 +23,7 @@ defmodule PhoenixAppWeb.GalaxyLive do
     # Update galaxy animation state
     updated_state = update_galaxy_animation(socket.assigns.galaxy_state)
     
-    # Push updates to Impact.js
+    # Push updates to frontend
     push_event(socket, "galaxy_update", %{
       stars: socket.assigns.stars,
       planets: socket.assigns.planets,
@@ -72,7 +72,7 @@ defmodule PhoenixAppWeb.GalaxyLive do
          id="galaxy-main"
          phx-window-mousemove="mouse_move">
       
-      <!-- Impact.js Canvas -->
+      <!-- Galaxy Canvas -->
       <canvas id="galaxy-canvas" 
               width="1200" 
               height="800"

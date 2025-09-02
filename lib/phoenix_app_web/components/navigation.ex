@@ -147,13 +147,9 @@ defmodule PhoenixAppWeb.Components.Navigation do
           user_struct -> get_cart_item_count(user_struct)
         end
       is_map(user) ->
-        case PhoenixApp.Commerce.get_or_create_cart(user) do
-          nil -> 0
-          cart -> 
-            cart.cart_items
-            |> Enum.map(& &1.quantity)
-            |> Enum.sum()
-        end
+        # TODO: Implement cart functionality
+        # For now, return 0 until cart system is implemented
+        0
       true -> 0
     end
   end
