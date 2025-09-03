@@ -58,35 +58,27 @@ defmodule PhoenixAppWeb.Api.GameAuthController do
 
   # POST /api/game/login
   def login(conn, %{"email" => email, "password" => password}) do
-    # Simple approach - just check if user exists and password matches
-    case Accounts.get_user_by_email(email) do
-      nil ->
+    case Accounts.authenticate_user(email, password) do
+      {:ok, user} ->
+        conn
+        |> put_session(:user_id, user.id)
+        |> configure_session(renew: true)
+        |> put_status(:ok)
+        |> json(%{
+          success: true,
+          message: "Login successful",
+          user: %{
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            is_admin: user.is_admin
+          }
+        })
+
+      {:error, _reason} ->
         conn
         |> put_status(:unauthorized)
         |> json(%{success: false, error: "Invalid email or password"})
-      
-      user ->
-        # Use simple password check to avoid the match error
-        if user.password_hash && String.length(user.password_hash) > 10 do
-          conn
-          |> put_session(:user_id, user.id)
-          |> configure_session(renew: true)
-          |> put_status(:ok)
-          |> json(%{
-            success: true,
-            message: "Login successful",
-            user: %{
-              id: user.id,
-              email: user.email,
-              name: user.name,
-              is_admin: user.is_admin
-            }
-          })
-        else
-          conn
-          |> put_status(:unauthorized)
-          |> json(%{success: false, error: "Invalid email or password"})
-        end
     end
   end
 

@@ -53,3 +53,8 @@ config :phoenix_app, PhoenixApp.Mailer,
   password: System.get_env("SMTP_PASS"),
   tls: :never,
   retries: 1
+
+# ----------------------------
+# Password hashing (dev - Bcrypt is much faster than PBKDF2)
+# ----------------------------
+config :bcrypt_elixir, :log_rounds, 4  # Fast for development (default is 12)

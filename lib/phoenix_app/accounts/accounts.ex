@@ -51,13 +51,7 @@ defmodule PhoenixApp.Accounts do
   # Check user password
   # ---------------------
   def check_password(%User{password_hash: hash}, password) when is_binary(password) do
-    # Handle case where hash might be a list (pbkdf2_elixir version issue)
-    hash_string = case hash do
-      h when is_binary(h) -> h
-      h when is_list(h) -> List.to_string(h)
-      h -> to_string(h)
-    end
-    Pbkdf2.verify_pass(password, hash_string)
+    Bcrypt.verify_pass(password, hash)
   end
 
   # ---------------------
@@ -65,8 +59,12 @@ defmodule PhoenixApp.Accounts do
   # Returns {:ok, user} or {:error, reason}
   # ---------------------
   def authenticate_user(email, password) when is_binary(email) and is_binary(password) do
-    case get_user_by_email(email) do
+    start_time = System.monotonic_time(:millisecond)
+    
+    result = case get_user_by_email(email) do
       nil ->
+        # Still run password check to prevent timing attacks
+        Bcrypt.no_user_verify()
         {:error, :invalid_email}
 
       user ->
@@ -76,6 +74,11 @@ defmodule PhoenixApp.Accounts do
           {:error, :invalid_password}
         end
     end
+    
+    end_time = System.monotonic_time(:millisecond)
+    IO.puts("Authentication took #{end_time - start_time}ms")
+    
+    result
   end
 
   # ---------------------

@@ -44,12 +44,31 @@ defmodule PhoenixAppWeb.AuthLive do
   # Handle submit
   # ----------------
   def handle_event("submit", %{"user" => user_params}, socket) do
-    # Set loading state
-    socket = assign(socket, loading: true)
+    # Basic validation
+    email = String.trim(user_params["email"] || "")
+    password = user_params["password"] || ""
     
-    case socket.assigns.action do
-      :login -> do_login(socket, user_params)
-      :register -> do_register(socket, user_params)
+    cond do
+      email == "" ->
+        {:noreply, 
+         socket
+         |> put_flash(:error, "Email is required")
+         |> assign(errors: ["Email is required"])}
+      
+      password == "" ->
+        {:noreply, 
+         socket
+         |> put_flash(:error, "Password is required")
+         |> assign(errors: ["Password is required"])}
+      
+      true ->
+        # Set loading state
+        socket = assign(socket, loading: true)
+        
+        case socket.assigns.action do
+          :login -> do_login(socket, user_params)
+          :register -> do_register(socket, user_params)
+        end
     end
   end
 
@@ -57,8 +76,11 @@ defmodule PhoenixAppWeb.AuthLive do
   # Login
   # ----------------
   defp do_login(socket, %{"email" => email, "password" => password} = _params) do
-    case Accounts.authenticate_user(email, password) do
-      {:ok, user} ->
+    # Add timeout to prevent hanging
+    task = Task.async(fn -> Accounts.authenticate_user(email, password) end)
+    
+    case Task.yield(task, 10_000) || Task.shutdown(task) do
+      {:ok, {:ok, user}} ->
         # Set the session directly in the socket
         {:noreply,
          socket
@@ -67,7 +89,7 @@ defmodule PhoenixAppWeb.AuthLive do
          |> assign(current_user: user)
          |> redirect(external: "/auth/login_success?user_id=#{user.id}")}
 
-      {:error, _reason} ->
+      {:ok, {:error, _reason}} ->
         # Preserve entered email, clear password
         form = to_form(%{"email" => email}, as: "user")
 
@@ -76,6 +98,16 @@ defmodule PhoenixAppWeb.AuthLive do
          |> assign(loading: false)
          |> put_flash(:error, "Invalid email or password")
          |> assign(form: form, errors: ["Invalid email or password"])}
+      
+      nil ->
+        # Timeout occurred
+        form = to_form(%{"email" => email}, as: "user")
+        
+        {:noreply,
+         socket
+         |> assign(loading: false)
+         |> put_flash(:error, "Login timeout - please try again")
+         |> assign(form: form, errors: ["Login timeout"])}
     end
   end
 
@@ -101,11 +133,14 @@ defmodule PhoenixAppWeb.AuthLive do
             "#{String.capitalize(to_string(field))} #{msg}"
           end)
 
+        # Preserve form data on error
+        form = to_form(user_params, as: "user")
+
         {:noreply,
          socket
          |> assign(loading: false)
          |> put_flash(:error, "Please fix the errors below")
-         |> assign(errors: errors)}
+         |> assign(form: form, errors: errors)}
     end
   end
 
@@ -120,6 +155,8 @@ defmodule PhoenixAppWeb.AuthLive do
   # ----------------
   def render(assigns) do
     ~H"""
+      <.flash_group flash={@flash} />
+      
       <!-- Starry Background -->
       <div class="stars-container">
         <div class="stars"></div>
@@ -155,11 +192,23 @@ defmodule PhoenixAppWeb.AuthLive do
               />
             </div>
             
+            <div :if={@action == :register}>
+              <label class="block text-white text-sm font-medium mb-2">Name</label>
+              <input 
+                type="text" 
+                name="user[name]" 
+                value={@form.data["name"] || ""}
+                class="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                placeholder="Enter your name"
+              />
+            </div>
+            
             <div>
               <label class="block text-white text-sm font-medium mb-2">Password</label>
               <input 
                 type="password" 
                 name="user[password]" 
+                value={if @action == :register, do: @form.data["password"] || "", else: ""}
                 required
                 class="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
                 placeholder="Enter your password"

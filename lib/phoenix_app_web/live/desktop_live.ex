@@ -316,7 +316,6 @@ defmodule PhoenixAppWeb.DesktopLive do
 
   def render(assigns) do
     ~H"""
-    <.navbar current_user={@current_user} />
     <div class="desktop-container starry-background">
 
       <div class="stars-container">

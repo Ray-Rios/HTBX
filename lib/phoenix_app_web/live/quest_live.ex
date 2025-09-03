@@ -140,6 +140,7 @@ defmodule PhoenixAppWeb.QuestLive do
 
   def render(assigns) do
     ~H"""
+    
     <div id="game-wrapper" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; overflow: hidden; z-index: 1000; background: #000011;">
       <canvas 
         id="quest-canvas"

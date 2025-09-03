@@ -73,7 +73,6 @@ defmodule PhoenixAppWeb.Components.Navigation do
                 <!-- Dropdown Menu -->
                 <div x-show="open" 
                      x-cloak
-                     style="display: none;"
                      class="absolute dropdown-menu w-48 bg-gray-800 rounded-md shadow-lg py-1 z-50"
                      x-transition:enter="transition ease-out duration-200"
                      x-transition:enter-start="transform translate-x-full opacity-0"
@@ -118,7 +117,7 @@ defmodule PhoenixAppWeb.Components.Navigation do
         const icon = document.getElementById('nav-toggle-icon');
         const body = document.body;
         
-        if (navbar.style.transform === 'translateY(-100%)') {
+        if (navbar.style.transform === 'translateY(-80%)') {
           // Show navbar
           navbar.style.transform = 'translateY(0)';
           icon.style.transform = 'rotate(0deg)';

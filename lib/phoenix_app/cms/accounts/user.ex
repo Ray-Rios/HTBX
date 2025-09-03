@@ -48,7 +48,7 @@ defmodule PhoenixApp.CMS.Accounts.User do
   defp hash_password(changeset) do
     case changeset do
       %Ecto.Changeset{valid?: true, changes: %{password: password}} ->
-        put_change(changeset, :password_hash, Pbkdf2.hash_pwd_salt(password))
+        put_change(changeset, :password_hash, Bcrypt.hash_pwd_salt(password))
       _ ->
         changeset
     end
@@ -59,7 +59,7 @@ defmodule PhoenixApp.CMS.Accounts.User do
   """
   def valid_password?(%__MODULE__{password_hash: hashed_password}, password)
       when is_binary(hashed_password) and byte_size(password) > 0 do
-    Pbkdf2.verify_pass(password, hashed_password)
+    Bcrypt.verify_pass(password, hashed_password)
   end
 
   def valid_password?(_, _) do

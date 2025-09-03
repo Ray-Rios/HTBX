@@ -39,6 +39,7 @@ defmodule PhoenixAppWeb.CMS.BlogLive do
 
   def render(%{current_post: nil} = assigns) do
     ~H"""
+    <.flash_group flash={@flash} />
     <div class="min-h-screen bg-gray-50">
       <!-- Header -->
       <div class="bg-white shadow">
@@ -109,6 +110,7 @@ defmodule PhoenixAppWeb.CMS.BlogLive do
 
   def render(%{current_post: post} = assigns) do
     ~H"""
+    <.flash_group flash={@flash} />
     <div class="min-h-screen bg-gray-50">
       <!-- Header -->
       <div class="bg-white shadow">
@@ -117,12 +119,12 @@ defmodule PhoenixAppWeb.CMS.BlogLive do
             <nav class="flex items-center space-x-2 text-sm text-gray-500 mb-4">
               <.link navigate={~p"/blog"} class="hover:text-gray-700">Blog</.link>
               <span>→</span>
-              <span class="text-gray-900"><%= @post.title %></span>
+              <span class="text-gray-900"><%= @current_post.title %></span>
             </nav>
-            <h1 class="text-3xl font-bold text-gray-900"><%= @post.title %></h1>
+            <h1 class="text-3xl font-bold text-gray-900"><%= @current_post.title %></h1>
             <div class="mt-2 flex items-center text-sm text-gray-500">
-              <time datetime={@post.inserted_at}>
-                <%= if @post.inserted_at, do: Calendar.strftime(@post.inserted_at, "%B %d, %Y"), else: "No date" %>
+              <time datetime={@current_post.inserted_at}>
+                <%= if @current_post.inserted_at, do: Calendar.strftime(@current_post.inserted_at, "%B %d, %Y"), else: "No date" %>
               </time>
             </div>
           </div>
@@ -134,7 +136,7 @@ defmodule PhoenixAppWeb.CMS.BlogLive do
         <article class="bg-white shadow rounded-lg overflow-hidden">
           <div class="p-8">
             <div class="prose prose-lg max-w-none">
-              <%= raw(format_content(@post.content || "")) %>
+              <%= raw(format_content(@current_post.content || "")) %>
             </div>
           </div>
         </article>
