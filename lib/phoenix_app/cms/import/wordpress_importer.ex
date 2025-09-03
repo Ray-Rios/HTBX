@@ -4,7 +4,6 @@ defmodule PhoenixApp.CMS.Import.WordPressImporter do
   Handles indiscriminate import - accepts whatever data it can parse.
   """
 
-  import Ecto.Query
   alias PhoenixApp.Repo
   alias PhoenixApp.CMS
 
@@ -131,7 +130,7 @@ defmodule PhoenixApp.CMS.Import.WordPressImporter do
     end
   end
 
-  defp import_posts(posts_data, postmeta_data, result) do
+  defp import_posts(posts_data, _postmeta_data, result) do
     count = Enum.reduce(posts_data, 0, fn row, acc ->
       case create_post_from_wp_row(row) do
         {:ok, _post} -> acc + 1

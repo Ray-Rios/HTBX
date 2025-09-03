@@ -47,6 +47,7 @@ defmodule PhoenixApp.MixProject do
       {:absinthe, "~> 1.7"},
       {:absinthe_plug, "~> 1.5"},
       {:absinthe_phoenix, "~> 2.0"},
+      {:dataloader, "~> 2.0"},
       {:redix, "~> 1.2"},
       {:pbkdf2_elixir, "~> 2.0"},
       # E-commerce & Payments

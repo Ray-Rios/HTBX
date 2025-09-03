@@ -1,158 +1,164 @@
-// Mock UE5 Game Streamer for Testing Pixel Streaming
+#!/usr/bin/env node
+
+// Mock UE5 Game Streamer - Connects to Pixel Streaming Server
 const WebSocket = require('ws');
 
-class MockGameStreamer {
-    constructor() {
-        this.ws = null;
-        this.isConnected = false;
-        this.connect();
+console.log('🎮 Mock UE5 Game Streamer Starting...');
+console.log('Engine Version: 5.4.4 (Mock)');
+console.log('Build Configuration: Development');
+console.log('Platform: Linux');
+console.log('');
+
+// Parse command line arguments
+let pixelStreamingURL = 'ws://localhost:9070';
+let renderOffScreen = false;
+
+process.argv.forEach(arg => {
+    if (arg.startsWith('-PixelStreamingURL=')) {
+        pixelStreamingURL = arg.split('=')[1];
     }
+    if (arg.includes('-RenderOffScreen')) {
+        renderOffScreen = true;
+        console.log('Render offscreen mode enabled');
+    }
+});
+
+console.log('Initializing game systems...');
+console.log('- Loading ActionRPG world...');
+console.log('- Starting multiplayer subsystem...');
+console.log('- Initializing character systems...');
+console.log('- Loading inventory system...');
+console.log(`- Starting Pixel Streaming connection to ${pixelStreamingURL}`);
+console.log('- WebRTC enabled');
+console.log('');
+
+// Connect to pixel streaming signaling server
+let ws;
+let connected = false;
+let players = 0;
+
+function connectToSignalingServer() {
+    console.log(`🔌 Connecting to signaling server: ${pixelStreamingURL}`);
     
-    connect() {
-        console.log('🎮 Mock Game Streamer connecting to signaling server...');
+    ws = new WebSocket(pixelStreamingURL);
+    
+    ws.on('open', () => {
+        console.log('✅ Connected to pixel streaming signaling server');
         
-        this.ws = new WebSocket('ws://localhost:9070');
+        // Register as streamer
+        ws.send(JSON.stringify({
+            type: 'streamer',
+            gameTitle: 'ActionRPG Multiplayer Start',
+            version: '1.0.0'
+        }));
         
-        this.ws.on('open', () => {
-            console.log('✅ Connected to signaling server');
+        connected = true;
+        console.log('🎮 ActionRPG Server ready!');
+        console.log('🌐 Listening for connections...');
+        console.log('📊 Max players: 100');
+        console.log('🎥 Mock video stream active');
+    });
+    
+    ws.on('message', (data) => {
+        try {
+            const message = JSON.parse(data);
             
-            // Register as streamer
-            this.ws.send(JSON.stringify({
-                type: 'streamer'
-            }));
-            
-            this.isConnected = true;
-        });
-        
-        this.ws.on('message', (data) => {
-            try {
-                const message = JSON.parse(data);
-                this.handleMessage(message);
-            } catch (error) {
-                console.error('Error parsing message:', error);
+            switch (message.type) {
+                case 'streamerConnected':
+                    console.log('📡 Streamer registration confirmed');
+                    break;
+                    
+                case 'offer':
+                    console.log('📞 Received WebRTC offer from viewer');
+                    // Send mock answer
+                    setTimeout(() => {
+                        ws.send(JSON.stringify({
+                            type: 'answer',
+                            target: 'viewer',
+                            sdp: 'mock-sdp-answer-data',
+                            timestamp: Date.now()
+                        }));
+                        console.log('📞 Sent WebRTC answer to viewer');
+                    }, 100);
+                    break;
+                    
+                case 'iceCandidate':
+                    console.log('🧊 Received ICE candidate from viewer');
+                    // Send mock ICE candidate back
+                    setTimeout(() => {
+                        ws.send(JSON.stringify({
+                            type: 'iceCandidate',
+                            target: 'viewer',
+                            candidate: 'mock-ice-candidate',
+                            timestamp: Date.now()
+                        }));
+                    }, 50);
+                    break;
+                    
+                case 'gameInput':
+                    console.log('🎮 Received game input:', message.input);
+                    break;
             }
-        });
-        
-        this.ws.on('close', () => {
-            console.log('❌ Disconnected from signaling server');
-            this.isConnected = false;
-            
-            // Reconnect after 5 seconds
-            setTimeout(() => this.connect(), 5000);
-        });
-        
-        this.ws.on('error', (error) => {
-            console.error('WebSocket error:', error);
-        });
-    }
+        } catch (error) {
+            console.error('❌ Error parsing message:', error);
+        }
+    });
     
-    handleMessage(message) {
-        console.log('📨 Received message:', message.type);
+    ws.on('close', () => {
+        console.log('❌ Disconnected from signaling server');
+        connected = false;
         
-        switch (message.type) {
-            case 'streamerConnected':
-                console.log('🎯 Registered as streamer successfully');
-                break;
-                
-            case 'offer':
-                console.log('📞 Received WebRTC offer from viewer');
-                // In a real game, this would set up WebRTC connection
-                // For now, just acknowledge
-                this.sendAnswer(message);
-                break;
-                
-            case 'iceCandidate':
-                console.log('🧊 Received ICE candidate');
-                break;
-                
-            case 'gameInput':
-                console.log('🎮 Received game input:', message.data && message.data.type);
-                break;
+        // Attempt to reconnect after 5 seconds
+        setTimeout(() => {
+            console.log('🔄 Attempting to reconnect...');
+            connectToSignalingServer();
+        }, 5000);
+    });
+    
+    ws.on('error', (error) => {
+        console.error('❌ WebSocket error:', error.message);
+    });
+}
+
+// Start connection
+connectToSignalingServer();
+
+// Simulate game server activity
+let counter = 0;
+setInterval(() => {
+    counter++;
+    
+    // Simulate player connections/disconnections
+    if (counter % 10 === 0) {
+        if (Math.random() > 0.5 && players < 10) {
+            players++;
+            console.log(`[${new Date().toLocaleTimeString()}] Player connected (Total: ${players})`);
+        } else if (players > 0) {
+            players--;
+            console.log(`[${new Date().toLocaleTimeString()}] Player disconnected (Total: ${players})`);
         }
     }
     
-    sendAnswer(offerMessage) {
-        // Create a more realistic mock WebRTC answer
-        const mockSdp = `v=0
-o=- 123456789 2 IN IP4 127.0.0.1
-s=-
-t=0 0
-a=group:BUNDLE 0 1
-a=msid-semantic: WMS mock-stream
-m=video 9 UDP/TLS/RTP/SAVPF 96
-c=IN IP4 0.0.0.0
-a=rtcp:9 IN IP4 0.0.0.0
-a=ice-ufrag:mock
-a=ice-pwd:mockpassword
-a=fingerprint:sha-256 00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00
-a=setup:active
-a=mid:0
-a=sendonly
-a=rtcp-mux
-a=rtpmap:96 H264/90000
-a=ssrc:1234567890 cname:mock-video
-a=ssrc:1234567890 msid:mock-stream mock-video-track
-m=audio 9 UDP/TLS/RTP/SAVPF 111
-c=IN IP4 0.0.0.0
-a=rtcp:9 IN IP4 0.0.0.0
-a=ice-ufrag:mock
-a=ice-pwd:mockpassword
-a=fingerprint:sha-256 00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00
-a=setup:active
-a=mid:1
-a=sendonly
-a=rtcp-mux
-a=rtpmap:111 opus/48000/2
-a=ssrc:1234567891 cname:mock-audio
-a=ssrc:1234567891 msid:mock-stream mock-audio-track`;
-
-        const mockAnswer = {
-            type: 'answer',
-            answer: {
-                type: 'answer',
-                sdp: mockSdp
-            },
-            target: 'viewer'
-        };
-        
-        console.log('📤 Sending realistic mock WebRTC answer');
-        this.ws.send(JSON.stringify(mockAnswer));
-        
-        // Send some mock ICE candidates after a delay
-        setTimeout(() => {
-            this.sendMockIceCandidates();
-        }, 1000);
+    // Periodic status updates
+    if (counter % 15 === 0) {
+        const memory = Math.floor(Math.random() * 500 + 1000);
+        console.log(`[${new Date().toLocaleTimeString()}] Server Status - Tick: ${counter}, Players: ${players}, Memory: ${memory}MB, Streaming: ${connected ? 'Active' : 'Disconnected'}`);
     }
-    
-    sendMockIceCandidates() {
-        const mockCandidates = [
-            'candidate:1 1 UDP 2130706431 127.0.0.1 54400 typ host',
-            'candidate:2 1 UDP 1694498815 192.168.1.100 54401 typ srflx raddr 127.0.0.1 rport 54400',
-        ];
-        
-        mockCandidates.forEach((candidate, index) => {
-            setTimeout(() => {
-                const iceMessage = {
-                    type: 'iceCandidate',
-                    candidate: {
-                        candidate: candidate,
-                        sdpMLineIndex: 0,
-                        sdpMid: '0'
-                    },
-                    target: 'viewer'
-                };
-                
-                console.log('🧊 Sending mock ICE candidate:', index + 1);
-                this.ws.send(JSON.stringify(iceMessage));
-            }, index * 500);
-        });
+}, 2000);
+
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('🛑 Shutting down game server...');
+    if (ws) {
+        ws.close();
     }
-}
+    process.exit(0);
+});
 
-console.log('🚀 Starting Mock Game Streamer...');
-console.log('📝 This simulates a UE5 game connecting to pixel streaming');
-console.log('🔗 Connect your browser to http://localhost:9070 to test');
-console.log('⚠️  NOTE: This is a MOCK - no actual video will stream');
-console.log('🎮 For real video, you need a packaged UE5 game with Pixel Streaming');
-
-new MockGameStreamer();
+process.on('SIGINT', () => {
+    console.log('🛑 Shutting down game server...');
+    if (ws) {
+        ws.close();
+    }
+    process.exit(0);
+});

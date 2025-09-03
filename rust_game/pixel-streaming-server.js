@@ -58,10 +58,24 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    let filePath = path.join(__dirname, 'web', req.url === '/' ? 'index.html' : req.url);
+    // Route to new game UI
+    if (req.url === '/') {
+        filePath = path.join(__dirname, 'pixel-streaming-web', 'game-ui.html');
+    } else if (req.url === '/pixel-streaming') {
+        filePath = path.join(__dirname, 'web', 'index.html');
+    } else if (req.url.startsWith('/pixel-streaming-web/')) {
+        filePath = path.join(__dirname, req.url);
+    } else {
+        filePath = path.join(__dirname, 'web', req.url);
+    }
 
     // Security check
-    if (!filePath.startsWith(path.join(__dirname, 'web'))) {
+    const allowedDirs = [
+        path.join(__dirname, 'web'),
+        path.join(__dirname, 'pixel-streaming-web')
+    ];
+    
+    if (!allowedDirs.some(dir => filePath.startsWith(dir))) {
         res.writeHead(403);
         res.end('Forbidden');
         return;

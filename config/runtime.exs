@@ -6,8 +6,8 @@ import Config
 secret_key_base =
   System.get_env("SECRET_KEY_BASE") ||
     if config_env() == :dev do
-      # Dev default if not set
-      "dev_secret_key_base_#{:crypto.strong_rand_bytes(16) |> Base.encode64()}"
+      # Dev default - fixed key for development
+      "sX9/Rn5BIxDT+OD20jOYEYImGrN9SR7F9NLC1av9z+aip2mySJdALjSICoNOX5Hc"
     else
       raise """
       environment variable SECRET_KEY_BASE is missing.
@@ -48,8 +48,8 @@ guardian_secret =
 # -------------------------------------------------
 db_username = System.get_env("DB_USERNAME") || "root"
 db_password = System.get_env("DB_PASSWORD") || "cockroachDB"
-db_host = System.get_env("DB_HOST") || "db"
-db_port = String.to_integer(System.get_env("DB_PORT") || "26257")
+db_host = System.get_env("DB_HOST") || if(config_env() == :dev, do: "localhost", else: "db")
+db_port = String.to_integer(System.get_env("DB_PORT") || if(config_env() == :dev, do: "26258", else: "26257"))
 db_name = System.get_env("DB_NAME") || "phoenixapp_dev"
 db_pool = String.to_integer(System.get_env("POOL_SIZE") || "10")
 
@@ -93,7 +93,10 @@ config :phoenix_app, PhoenixApp.Auth.Guardian,
 # Redis
 # -------------------------------------------------
 config :phoenix_app, :redis_url,
-  System.get_env("REDIS_URL") || "redis://redis:6379/0"
+  System.get_env("REDIS_URL") || if(config_env() == :dev, do: "redis://localhost:6379/0", else: "redis://redis:6379/0")
+
+config :phoenix_app, :enable_redis,
+  System.get_env("ENABLE_REDIS", "false") == "true"
 
 # -------------------------------------------------
 # Swoosh / Mailer

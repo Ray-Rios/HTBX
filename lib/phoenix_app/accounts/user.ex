@@ -47,10 +47,10 @@ defmodule PhoenixApp.Accounts.User do
     |> put_password_hash()
   end
 
-  # Update profile (email/name)
+  # Update profile (email/name/avatar)
   def profile_changeset(user, attrs) do
     user
-    |> cast(attrs, [:name, :email])
+    |> cast(attrs, [:name, :email, :avatar_shape, :avatar_color, :avatar_url])
     |> validate_required([:name, :email])
     |> validate_format(:email, ~r/@/)
     |> unique_constraint(:email)

@@ -7,7 +7,7 @@ defmodule PhoenixApp.CMS do
   alias PhoenixApp.Repo
 
   alias PhoenixApp.CMS.Accounts.User
-  alias PhoenixApp.CMS.Content.{Post, PostMeta}
+  alias PhoenixApp.CMS.Content.Post
   alias PhoenixApp.CMS.Taxonomy.{Taxonomy, Term}
   alias PhoenixApp.CMS.Settings.Option
 

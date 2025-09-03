@@ -120,7 +120,6 @@ defmodule PhoenixAppWeb.AuthLive do
   # ----------------
   def render(assigns) do
     ~H"""
-    <.navbar current_user={@current_user} />
       <!-- Starry Background -->
       <div class="stars-container">
         <div class="stars"></div>

@@ -28,7 +28,8 @@ defmodule PhoenixAppWeb.Router do
 
   live_session :browser,
     on_mount: {PhoenixAppWeb.UserAuth, :default},
-    session: %{} do
+    session: %{},
+    layout: {PhoenixAppWeb.Layouts, :app} do
 
     # Homepage is always public
     live "/", HomeLive, :index
@@ -51,11 +52,6 @@ defmodule PhoenixAppWeb.Router do
     live "/unreal", UnrealLive, :index
     live "/desktop", DesktopLive, :index
     live "/terminal", TerminalLive, :index
-    live "/galaxy-test", GalaxyTestLive, :index
-    live "/galaxy", SimpleGalaxyLive, :index
-    live "/galaxy-demo", DemoGalaxyLive, :index
-
-
 
   end
   end
@@ -67,7 +63,8 @@ defmodule PhoenixAppWeb.Router do
     pipe_through :browser
 
     live_session :authenticated,
-      on_mount: {PhoenixAppWeb.UserAuth, :require_authenticated_user} do
+      on_mount: {PhoenixAppWeb.UserAuth, :require_authenticated_user},
+      layout: {PhoenixAppWeb.Layouts, :app} do
 
       live "/dashboard", DashboardLive, :index
       live "/profile", ProfileLive, :index
@@ -76,6 +73,9 @@ defmodule PhoenixAppWeb.Router do
       live "/avatar", AvatarLive, :index
       live "/files", FilesLive, :index
       live "/files/upload", FilesLive, :upload
+      
+      # Game interfaces (require authentication)
+      live "/game", GamePlayerLive, :index
     end
   end
 
@@ -99,28 +99,13 @@ defmodule PhoenixAppWeb.Router do
     pipe_through :browser
 
     live_session :admin,
-      on_mount: {PhoenixAppWeb.UserAuth, :require_admin_user} do
+      on_mount: {PhoenixAppWeb.UserAuth, :require_admin_user},
+      layout: {PhoenixAppWeb.Layouts, :app} do
 
-      live "/", AdminDashboardLive, :index
-      live "/users", AdminUserLive, :index
-      live "/users/:id", AdminUserLive, :show
-      live "/analytics", AdminAnalyticsLive, :index
-      live "/settings", AdminSettingsLive, :index
-      live "/user-management", AdminLive.UserManagementLive, :index
-      live "/services", AdminLive.ServicesLive, :index
-    end
-
-
-  end
-
-  # --------------------
-  # WordPress CMS Admin
-  # --------------------
-  scope "/cms", PhoenixAppWeb do
-    pipe_through :browser
-
-    live_session :cms_admin do
-      live "/admin", CMS.AdminLive, :index
+      live "/", CMS.AdminLive, :index
+      live "/game", GameAdminLive, :index
+      live "/game-cms", GameCmsAdminLive, :index
+      live "/user-management", UserManagementLive, :index
     end
   end
 
@@ -158,6 +143,23 @@ defmodule PhoenixAppWeb.Router do
     
     # Admin-only endpoints
     get "/users", Api.GameAuthController, :list_users
+  end
+
+  # --------------------
+  # Pixel Streaming API
+  # --------------------
+  scope "/api/pixel-streaming", PhoenixAppWeb do
+    pipe_through :api
+
+    # Public endpoints for pixel streaming service
+    get "/status", Api.PixelStreamingController, :status
+    get "/players", Api.PixelStreamingController, :players
+    get "/game-data", Api.PixelStreamingController, :game_data
+    
+    # Admin endpoints (should be protected in production)
+    get "/admin/stats", Api.PixelStreamingController, :admin_stats
+    post "/admin/broadcast", Api.PixelStreamingController, :broadcast_message
+    post "/admin/kick/:player_id", Api.PixelStreamingController, :kick_player
   end
 
   # --------------------

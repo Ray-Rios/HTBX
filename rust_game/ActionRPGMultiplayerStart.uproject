@@ -47,6 +47,10 @@
 		{
 			"Name": "NNERuntimeIREE",
 			"Enabled": true
+		},
+		{
+			"Name": "Fab",
+			"Enabled": false
 		}
 	]
 }

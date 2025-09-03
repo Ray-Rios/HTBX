@@ -2,12 +2,18 @@ defmodule PhoenixAppWeb.Schema do
   use Absinthe.Schema
   alias PhoenixApp.{Accounts, Game}
 
+  import_types Absinthe.Type.Custom
+  import_types PhoenixAppWeb.Schema.GameCmsTypes
+
   # Types
   object :user do
     field :id, :id
     field :email, :string
     field :name, :string
     field :is_admin, :boolean
+    field :role, :string
+    field :inserted_at, :datetime
+    field :updated_at, :datetime
   end
 
   object :game_stats do
@@ -31,6 +37,9 @@ defmodule PhoenixAppWeb.Schema do
         {:ok, stats}
       end
     end
+
+    # Import game CMS queries
+    import_fields :game_cms_queries
   end
 
   # Mutations
@@ -67,5 +76,20 @@ defmodule PhoenixAppWeb.Schema do
         end
       end
     end
+
+    # Import game CMS mutations
+    import_fields :game_cms_mutations
+  end
+
+  # Context function to add current user to resolution context
+  def context(ctx) do
+    loader = Dataloader.new()
+    |> Dataloader.add_source(:db, Dataloader.Ecto.new(PhoenixApp.Repo))
+
+    Map.put(ctx, :loader, loader)
+  end
+
+  def plugins do
+    [Absinthe.Middleware.Dataloader] ++ Absinthe.Plugin.defaults()
   end
 end

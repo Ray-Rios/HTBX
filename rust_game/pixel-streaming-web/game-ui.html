@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ActionRPG - Game Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f1419;
+            color: white;
+            overflow: hidden;
+        }
+
+        .game-container {
+            display: grid;
+            grid-template-areas:
+                "header header header"
+                "sidebar main chat"
+                "sidebar main chat";
+            grid-template-columns: 250px 1fr 300px;
+            grid-template-rows: 60px 1fr;
+            height: 100vh;
+            gap: 2px;
+        }
+
+        .game-header {
+            grid-area: header;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            border-bottom: 2px solid #2c3e50;
+        }
+
+        .game-logo {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2ecc71;
+        }
+
+        .server-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #2ecc71;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sidebar {
+            grid-area: sidebar;
+            background: #1a1a2e;
+            padding: 20px;
+            border-right: 1px solid #2c3e50;
+            overflow-y: auto;
+        }
+
+        .main-game-area {
+            grid-area: main;
+            background: #0f3460;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .game-viewport {
+            flex: 1;
+            background: linear-gradient(45deg, #0f3460, #1a1a2e);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+        }
+
+        .health-mana-bars {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: auto;
+        }
+
+        .stat-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 8px 0;
+        }
+
+        .stat-bar label {
+            min-width: 60px;
+            font-size: 0.9em;
+            color: #bdc3c7;
+        }
+
+        .bar {
+            width: 200px;
+            height: 20px;
+            background: rgba(44, 62, 80, 0.8);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #444;
+        }
+
+        .bar .fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .health .fill {
+            background: linear-gradient(90deg, #e74c3c, #c0392b);
+        }
+
+        .mana .fill {
+            background: linear-gradient(90deg, #3498db, #2980b9);
+        }
+
+        .minimap {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 200px;
+            height: 150px;
+            background: rgba(26, 26, 46, 0.9);
+            border: 2px solid #444;
+            border-radius: 8px;
+            pointer-events: auto;
+        }
+
+        .minimap-header {
+            padding: 8px;
+            background: #2c3e50;
+            font-size: 0.8em;
+            text-align: center;
+            border-bottom: 1px solid #444;
+        }
+
+        .minimap-content {
+            padding: 10px;
+            height: calc(100% - 32px);
+            position: relative;
+        }
+
+        .hotbar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 5px;
+            pointer-events: auto;
+        }
+
+        .hotbar-slot {
+            width: 50px;
+            height: 50px;
+            background: rgba(44, 62, 80, 0.9);
+            border: 2px solid #444;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .hotbar-slot:hover {
+            border-color: #2ecc71;
+            transform: translateY(-2px);
+        }
+
+        .hotbar-slot.active {
+            border-color: #f39c12;
+            box-shadow: 0 0 10px rgba(243, 156, 18, 0.5);
+        }
+
+        .hotbar-key {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #2c3e50;
+            color: #bdc3c7;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7em;
+        }
+
+        .chat-panel {
+            grid-area: chat;
+            background: #1a1a2e;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid #2c3e50;
+        }
+
+        .chat-header {
+            padding: 15px;
+            background: #2c3e50;
+            border-bottom: 1px solid #444;
+            font-weight: bold;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+
+        .chat-message {
+            margin-bottom: 8px;
+            padding: 5px 8px;
+            border-radius: 4px;
+            background: rgba(52, 73, 94, 0.3);
+        }
+
+        .chat-message.system {
+            background: rgba(241, 196, 15, 0.2);
+            color: #f1c40f;
+        }
+
+        .chat-message.guild {
+            background: rgba(155, 89, 182, 0.2);
+            color: #9b59b6;
+        }
+
+        .chat-input {
+            padding: 15px;
+            border-top: 1px solid #444;
+        }
+
+        .chat-input input {
+            width: 100%;
+            padding: 10px;
+            background: #2c3e50;
+            border: 1px solid #444;
+            border-radius: 5px;
+            color: white;
+            font-size: 0.9em;
+        }
+
+        .chat-input input:focus {
+            outline: none;
+            border-color: #2ecc71;
+        }
+
+        .character-panel {
+            margin-bottom: 20px;
+        }
+
+        .character-avatar {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            font-weight: bold;
+            margin: 0 auto 15px;
+        }
+
+        .character-info h3 {
+            text-align: center;
+            color: #2ecc71;
+            margin-bottom: 5px;
+        }
+
+        .character-info p {
+            text-align: center;
+            color: #bdc3c7;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+
+        .quick-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .quick-stat {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+        }
+
+        .quick-stat .label {
+            color: #bdc3c7;
+        }
+
+        .quick-stat .value {
+            color: #2ecc71;
+            font-weight: bold;
+        }
+
+        .menu-section {
+            margin-bottom: 20px;
+        }
+
+        .menu-section h4 {
+            color: #2ecc71;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+        }
+
+        .menu-item {
+            padding: 8px 12px;
+            background: #2c3e50;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9em;
+        }
+
+        .menu-item:hover {
+            background: #34495e;
+            transform: translateX(5px);
+        }
+
+        .menu-item.active {
+            background: #2ecc71;
+            color: #1a1a2e;
+        }
+
+        .game-canvas {
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #1a1a2e, #0f1419);
+        }
+
+        .loading-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 20, 25, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid #2c3e50;
+            border-top: 3px solid #2ecc71;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .btn {
+            padding: 8px 16px;
+            background: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: #27ae60;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #3498db;
+        }
+
+        .btn-secondary:hover {
+            background: #2980b9;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="game-container">
+        <!-- Header -->
+        <div class="game-header">
+            <div class="game-logo">🎮 ActionRPG</div>
+            <div class="server-status">
+                <div class="status-indicator"></div>
+                <span id="server-status">Online</span>
+                <span id="player-count">247 players</span>
+            </div>
+            <div class="user-menu">
+                <span id="user-name">DragonSlayer</span>
+                <button class="btn btn-secondary" onclick="openGameDashboard()">Dashboard</button>
+                <button class="btn btn-secondary" onclick="openGameCMS()">Game CMS</button>
+                <button class="btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="character-panel">
+                <div class="character-avatar">D</div>
+                <div class="character-info">
+                    <h3>DragonSlayer</h3>
+                    <p>Level 45 Warrior</p>
+                </div>
+                <div class="quick-stats">
+                    <div class="quick-stat">
+                        <span class="label">Health:</span>
+                        <span class="value" id="health-text">850/1000</span>
+                    </div>
+                    <div class="quick-stat">
+                        <span class="label">Mana:</span>
+                        <span class="value" id="mana-text">200/300</span>
+                    </div>
+                    <div class="quick-stat">
+                        <span class="label">XP:</span>
+                        <span class="value">125k/150k</span>
+                    </div>
+                    <div class="quick-stat">
+                        <span class="label">Gold:</span>
+                        <span class="value">2,450</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="menu-section">
+                <h4>Game Menu</h4>
+                <div class="menu-item active" onclick="selectMenu('game')">🎮 Game World</div>
+                <div class="menu-item" onclick="selectMenu('inventory')">🎒 Inventory</div>
+                <div class="menu-item" onclick="selectMenu('character')">⚔️ Character</div>
+                <div class="menu-item" onclick="selectMenu('quests')">📜 Quests</div>
+                <div class="menu-item" onclick="selectMenu('guild')">🏰 Guild</div>
+                <div class="menu-item" onclick="selectMenu('friends')">👥 Friends</div>
+            </div>
+
+            <div class="menu-section">
+                <h4>Quick Actions</h4>
+                <div class="menu-item" onclick="useHealthPotion()">🧪 Health Potion</div>
+                <div class="menu-item" onclick="useManaPotion()">💙 Mana Potion</div>
+                <div class="menu-item" onclick="openMap()">🗺️ World Map</div>
+            </div>
+        </div>
+
+        <!-- Main Game Area -->
+        <div class="main-game-area">
+            <div class="game-viewport">
+                <canvas id="gameCanvas" class="game-canvas" width="1280" height="720"></canvas>
+
+                <!-- Game UI Overlay -->
+                <div class="game-ui-overlay">
+                    <!-- Health/Mana Bars -->
+                    <div class="health-mana-bars">
+                        <div class="stat-bar health">
+                            <label>Health</label>
+                            <div class="bar">
+                                <div class="fill" id="health-bar" style="width: 85%"></div>
+                            </div>
+                        </div>
+                        <div class="stat-bar mana">
+                            <label>Mana</label>
+                            <div class="bar">
+                                <div class="fill" id="mana-bar" style="width: 67%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Minimap -->
+                    <div class="minimap">
+                        <div class="minimap-header">Darkwood Forest</div>
+                        <div class="minimap-content">
+                            <canvas id="minimapCanvas" width="180" height="110"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Hotbar -->
+                    <div class="hotbar">
+                        <div class="hotbar-slot active" onclick="useSkill(1)">
+                            <span>⚔️</span>
+                            <div class="hotbar-key">1</div>
+                        </div>
+                        <div class="hotbar-slot" onclick="useSkill(2)">
+                            <span>🛡️</span>
+                            <div class="hotbar-key">2</div>
+                        </div>
+                        <div class="hotbar-slot" onclick="useSkill(3)">
+                            <span>🔥</span>
+                            <div class="hotbar-key">3</div>
+                        </div>
+                        <div class="hotbar-slot" onclick="useSkill(4)">
+                            <span>⚡</span>
+                            <div class="hotbar-key">4</div>
+                        </div>
+                        <div class="hotbar-slot" onclick="useSkill(5)">
+                            <span>🧪</span>
+                            <div class="hotbar-key">5</div>
+                        </div>
+                        <div class="hotbar-slot" onclick="useSkill(6)">
+                            <span>💙</span>
+                            <div class="hotbar-key">6</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Panel -->
+        <div class="chat-panel">
+            <div class="chat-header">💬 Global Chat</div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="chat-message system">[System] Welcome to ActionRPG!</div>
+                <div class="chat-message">[DragonSlayer] Anyone want to raid the dragon cave?</div>
+                <div class="chat-message">[MysticMage] I'm up for it! What level requirement?</div>
+                <div class="chat-message guild">[Guild] Guild meeting tonight at 8 PM</div>
+                <div class="chat-message">[ShadowRogue] Found a legendary sword in the ruins!</div>
+            </div>
+            <div class="chat-input">
+                <input type="text" id="chatInput" placeholder="Type your message..."
+                    onkeypress="handleChatInput(event)">
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-spinner"></div>
+        <h2>Loading ActionRPG...</h2>
+        <p>Connecting to game servers...</p>
+    </div>
+
+    <script>
+        // Game state
+        let gameState = {
+            health: 85,
+            mana: 67,
+            isLoading: true,
+            selectedMenu: 'game',
+            phoenixApiBase: 'http://localhost:4000/api/pixel-streaming'
+        };
+
+        // Initialize game
+        function initGame() {
+            console.log('🎮 Initializing ActionRPG Game Interface');
+
+            // Hide loading screen after 3 seconds
+            setTimeout(() => {
+                document.getElementById('loadingScreen').style.display = 'none';
+                gameState.isLoading = false;
+                startGameLoop();
+            }, 3000);
+
+            // Initialize canvas
+            initGameCanvas();
+            initMinimap();
+
+            // Fetch real-time data
+            fetchGameData();
+            setInterval(fetchGameData, 30000); // Update every 30 seconds
+        }
+
+        function initGameCanvas() {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // Set canvas size to fill container
+            function resizeCanvas() {
+                const container = canvas.parentElement;
+                canvas.width = container.clientWidth;
+                canvas.height = container.clientHeight;
+            }
+
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+        }
+
+        function initMinimap() {
+            const canvas = document.getElementById('minimapCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // Draw simple minimap
+            ctx.fillStyle = '#0f3460';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw player position
+            ctx.fillStyle = '#2ecc71';
+            ctx.beginPath();
+            ctx.arc(90, 55, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw some landmarks
+            ctx.fillStyle = '#e74c3c';
+            ctx.fillRect(20, 20, 10, 10); // Enemy
+            ctx.fillStyle = '#f39c12';
+            ctx.fillRect(150, 80, 8, 8); // Treasure
+        }
+
+        function startGameLoop() {
+            let frame = 0;
+
+            function gameLoop() {
+                if (!gameState.isLoading) {
+                    updateGame(frame);
+                    renderGame(frame);
+                }
+                frame++;
+                requestAnimationFrame(gameLoop);
+            }
+
+            gameLoop();
+        }
+
+        function updateGame(frame) {
+            // Animate health/mana bars
+            if (frame % 300 === 0) {
+                gameState.health = Math.max(20, Math.min(100, gameState.health + (Math.random() - 0.5) * 10));
+                gameState.mana = Math.max(10, Math.min(100, gameState.mana + (Math.random() - 0.5) * 15));
+
+                updateHealthMana();
+            }
+        }
+
+        function renderGame(frame) {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // Clear canvas
+            ctx.fillStyle = '#0f3460';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw grid
+            ctx.strokeStyle = '#2c3e50';
+            ctx.lineWidth = 1;
+
+            for (let x = 0; x < canvas.width; x += 64) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+
+            for (let y = 0; y < canvas.height; y += 64) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // Draw animated elements
+            const time = frame * 0.02;
+
+            // Draw player character
+            ctx.fillStyle = '#2ecc71';
+            ctx.beginPath();
+            ctx.arc(canvas.width / 2, canvas.height / 2, 25, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw other players/NPCs
+            for (let i = 0; i < 5; i++) {
+                const x = 200 + i * 150 + Math.sin(time + i) * 50;
+                const y = 200 + Math.cos(time * 0.8 + i) * 30;
+
+                ctx.fillStyle = i === 0 ? '#3498db' : '#e74c3c';
+                ctx.beginPath();
+                ctx.arc(x, y, 20, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Draw effects
+            for (let i = 0; i < 10; i++) {
+                const x = 100 + i * 120 + Math.sin(time + i) * 20;
+                const y = 100 + Math.cos(time * 0.7 + i) * 30;
+                const alpha = 0.3 + Math.sin(time + i) * 0.2;
+
+                ctx.fillStyle = `rgba(255, 255, 100, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(x, y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function updateHealthMana() {
+            document.getElementById('health-bar').style.width = gameState.health + '%';
+            document.getElementById('mana-bar').style.width = gameState.mana + '%';
+            document.getElementById('health-text').textContent = `${Math.floor(gameState.health * 10)}/1000`;
+            document.getElementById('mana-text').textContent = `${Math.floor(gameState.mana * 3)}/300`;
+        }
+
+        async function fetchGameData() {
+            try {
+                // Fetch pixel streaming data
+                const response = await fetch(`${gameState.phoenixApiBase}/players`);
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('player-count').textContent = `${data.total || 247} players`;
+
+                    // Add recent events to chat
+                    if (data.recent_events) {
+                        const chatMessages = document.getElementById('chatMessages');
+                        data.recent_events.forEach(event => {
+                            if (Math.random() < 0.3) {
+                                const messageDiv = document.createElement('div');
+                                messageDiv.className = 'chat-message system';
+                                messageDiv.textContent = `[System] ${event.message}`;
+                                chatMessages.appendChild(messageDiv);
+                                chatMessages.scrollTop = chatMessages.scrollHeight;
+                            }
+                        });
+                    }
+                }
+
+                // Fetch real character data from Game CMS
+                await fetchCharacterData();
+            } catch (error) {
+                console.log('Could not fetch game data from Phoenix API');
+            }
+        }
+
+        async function fetchCharacterData() {
+            try {
+                const query = `
+                    query {
+                        myCharacter {
+                            id
+                            name
+                            class
+                            level
+                            health
+                            maxHealth
+                            mana
+                            maxMana
+                            gold
+                            experience
+                            currentZone
+                        }
+                    }
+                `;
+
+                const response = await fetch('http://localhost:4000/api/graphql', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.data && result.data.myCharacter) {
+                        updateCharacterUI(result.data.myCharacter);
+                    }
+                }
+            } catch (error) {
+                console.log('Could not fetch character data from Game CMS');
+            }
+        }
+
+        function updateCharacterUI(character) {
+            // Update character info
+            document.querySelector('.character-info h3').textContent = character.name;
+            document.querySelector('.character-info p').textContent = `Level ${character.level} ${character.class}`;
+            document.getElementById('user-name').textContent = character.name;
+
+            // Update stats
+            const healthPercent = (character.health / character.maxHealth) * 100;
+            const manaPercent = (character.mana / character.maxMana) * 100;
+
+            gameState.health = healthPercent;
+            gameState.mana = manaPercent;
+
+            document.getElementById('health-text').textContent = `${character.health}/${character.maxHealth}`;
+            document.getElementById('mana-text').textContent = `${character.mana}/${character.maxMana}`;
+            document.querySelector('.quick-stat .value').textContent = `${character.gold}`;
+
+            updateHealthMana();
+
+            // Update zone info
+            if (character.currentZone) {
+                document.querySelector('.minimap-header').textContent = character.currentZone;
+            }
+        }
+
+        // UI Functions
+        function selectMenu(menu) {
+            gameState.selectedMenu = menu;
+
+            // Update active menu item
+            document.querySelectorAll('.menu-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            console.log(`Selected menu: ${menu}`);
+        }
+
+        function useSkill(skillNumber) {
+            console.log(`Used skill ${skillNumber}`);
+
+            // Update active hotbar slot
+            document.querySelectorAll('.hotbar-slot').forEach(slot => {
+                slot.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Add chat message
+            addChatMessage(`[You] Used skill ${skillNumber}`, 'system');
+        }
+
+        function useHealthPotion() {
+            gameState.health = Math.min(100, gameState.health + 25);
+            updateHealthMana();
+            addChatMessage('[You] Used Health Potion (+25 HP)', 'system');
+        }
+
+        function useManaPotion() {
+            gameState.mana = Math.min(100, gameState.mana + 30);
+            updateHealthMana();
+            addChatMessage('[You] Used Mana Potion (+30 MP)', 'system');
+        }
+
+        function openMap() {
+            addChatMessage('[System] World map opened', 'system');
+        }
+
+        function openGameDashboard() {
+            window.open('http://localhost:4000/game', '_blank');
+        }
+
+        function openGameCMS() {
+            window.open('http://localhost:4000/admin/game-cms', '_blank');
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = 'http://localhost:4000/auth/logout';
+            }
+        }
+
+        function handleChatInput(event) {
+            if (event.key === 'Enter') {
+                const input = event.target;
+                const message = input.value.trim();
+
+                if (message) {
+                    addChatMessage(`[DragonSlayer] ${message}`);
+                    input.value = '';
+                }
+            }
+        }
+
+        function addChatMessage(message, type = '') {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${type}`;
+            messageDiv.textContent = message;
+
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            // Keep only last 50 messages
+            while (chatMessages.children.length > 50) {
+                chatMessages.removeChild(chatMessages.firstChild);
+            }
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (event) => {
+            if (event.target.tagName === 'INPUT') return;
+
+            switch (event.key) {
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                    useSkill(parseInt(event.key));
+                    break;
+                case 'i':
+                case 'I':
+                    selectMenu('inventory');
+                    break;
+                case 'c':
+                case 'C':
+                    selectMenu('character');
+                    break;
+                case 'Enter':
+                    document.getElementById('chatInput').focus();
+                    break;
+            }
+        });
+
+        // Initialize when page loads
+        window.addEventListener('load', initGame);
+    </script>
+</body>
+
+</html>

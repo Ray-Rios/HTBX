@@ -14,7 +14,6 @@ defmodule PhoenixAppWeb.AuthController do
         conn
         |> put_session(:user_id, user.id)
         |> configure_session(renew: true) # helps prevent session fixation
-        |> put_flash(:info, "Successfully logged in!")
         |> redirect(to: ~p"/dashboard")
     end
   end

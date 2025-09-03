@@ -5,6 +5,8 @@ Example:
 SECRET_KEY_BASE= $(mix phx.gen.secret 64)
 LIVE_VIEW_SIGNING_SALT= $(mix phx.gen.secret 32)
 
+// build the game auto magically!!
+docker-compose -f docker-compose.ue5.yml run --rm ue5_builder
 
 and then inserted into .env.prod.
 
@@ -78,14 +80,42 @@ This leaves your working tree intact, and only affects Git's bookkeeping.
 
 
 
+docker exec projekt-redis-1 redis-cli MONITOR
+
+# Check specific data types
+docker exec projekt-redis-1 redis-cli KEYS "player:*"
+docker exec projekt-redis-1 redis-cli KEYS "session:*"
+docker exec projekt-redis-1 redis-cli KEYS "leaderboard:*"
 
 
 
+Visit: http://localhost:9070
+
+You should now see:
+
+Interactive game canvas with animated characters
+Real-time UI (health/mana bars, player stats)
+Minimap showing player positions
+Chat system with game events
+Responsive controls (click to interact)
+🚀 Next Steps for Real UE5:
+To replace the mock with a real UE5 game:
+
+Install UE5 with proper licensing
+Replace mock tools in rust_game/build-tools/ with real UE5 binaries
+Use same pipeline - the infrastructure is production-ready!
+Your build system is now fully functional and ready for real game development! 🎯
 
 
+📡 API Endpoints:
+GraphQL: http://localhost:4000/api/graphql
+GraphiQL: http://localhost:4000/api/graphiql (dev only)
+Admin Panel: http://localhost:4000/game/cms
+ /game/cms
 
-
-
+Phoenix stuff
+mix deps.get
+mix compile
 
 
 Example Migrations

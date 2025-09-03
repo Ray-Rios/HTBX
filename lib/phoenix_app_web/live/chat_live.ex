@@ -193,7 +193,6 @@ defmodule PhoenixAppWeb.ChatLive do
 
   def render(assigns) do
     ~H"""
-    <.navbar current_user={@current_user} />
     <div class="chat-container">
       
       <!-- Chat Sidebar -->
