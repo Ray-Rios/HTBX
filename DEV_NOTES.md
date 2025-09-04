@@ -70,6 +70,7 @@ curl http://localhost:9070/api/players
 curl http://localhost:9070/status
 
 
+# Fix your Repo
 mv -v .git .git_old &&            # Remove old Git files
 git init &&                       # Initialise new repository
 git remote add origin "${url}" && # Link to old repository

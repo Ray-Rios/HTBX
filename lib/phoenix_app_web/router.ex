@@ -110,7 +110,13 @@ defmodule PhoenixAppWeb.Router do
   end
 
 
-
+  scope "/eqemu", PhoenixAppWeb do
+    pipe_through [:browser, :require_authenticated_user]
+  
+    live "/admin", EqemuAdminLive, :index
+    live "/player", EqemuPlayerLive, :index
+    live "/server", EqemuServerLive, :index
+  end
 
 
   # --------------------
