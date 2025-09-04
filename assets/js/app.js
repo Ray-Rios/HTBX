@@ -21,6 +21,9 @@ import "./quest_engine";
 // Import rich editor components
 import { RichEditor } from "./rich_editor";
 
+// Import file drag-drop hooks
+import { FileDragDrop, FileUpload } from "./file_drag_drop";
+
 // Quest Game Hook
 const QuestGame = {
   mounted() {
@@ -48,10 +51,12 @@ const QuestGame = {
   }
 };
 
-// Clean hooks object with quest game and CMS components
+// Clean hooks object with quest game, CMS components, and file management
 let Hooks = {
   QuestGame,
-  RichEditor
+  RichEditor,
+  FileDragDrop,
+  FileUpload
 };
 
 let liveSocket = new LiveSocket("/live", Socket, {
