@@ -7,7 +7,7 @@ echo "🎮 Fixed UE5 Packaging Script"
 echo "============================="
 
 # Configuration
-PROJECT_NAME="ActionRPGMultiplayerStart"
+PROJECT_NAME="Eqemuue5"
 PROJECT_FILE="$(pwd)/${PROJECT_NAME}.uproject"
 OUTPUT_DIR="$(pwd)/Packaged"
 
@@ -109,7 +109,7 @@ if "$UE_EDITOR" "${PACKAGE_ARGS[@]}"; then
             # Create launch script
             cat > "$OUTPUT_DIR/Windows/launch-game.bat" << 'EOF'
 @echo off
-echo Starting ActionRPG Multiplayer Game...
+echo Starting EQEmu UE5 Game...
 echo.
 echo Game Controls:
 echo - WASD: Move
@@ -118,7 +118,7 @@ echo - Left Click: Attack
 echo - Space: Jump
 echo.
 echo Starting game...
-ActionRPGMultiplayerStart.exe
+Eqemuue5.exe
 pause
 EOF
             

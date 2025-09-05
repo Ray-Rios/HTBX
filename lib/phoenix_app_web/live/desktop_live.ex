@@ -5,7 +5,7 @@ defmodule PhoenixAppWeb.DesktopLive do
   on_mount {PhoenixAppWeb.Auth, :maybe_authenticated}
 
   def mount(_params, _session, socket) do
-    user = socket.assigns.current_user
+    _user = socket.assigns.current_user
     
     # Subscribe to desktop updates for real-time collaboration
     PubSub.subscribe(PhoenixApp.PubSub, "desktop:public")

@@ -7,7 +7,7 @@ defmodule PhoenixAppWeb.Api.PixelStreamingController do
       viewerCount: get_viewer_count(),
       timestamp: DateTime.utc_now(),
       gameStatus: "running",
-      message: "Enhanced ActionRPG server is running",
+      message: "Enhanced EQEmu server is running",
       serverStats: get_server_stats(),
       activePlayers: get_active_players_summary()
     })
@@ -24,7 +24,7 @@ defmodule PhoenixAppWeb.Api.PixelStreamingController do
   def game_data(conn, _params) do
     json(conn, %{
       world: %{
-        name: "ActionRPG World",
+        name: "EQEmu World",
         zones: [
           %{name: "Darkwood Forest", players: 23, difficulty: "medium"},
           %{name: "Crystal Caves", players: 15, difficulty: "hard"},

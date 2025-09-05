@@ -1,6 +1,6 @@
 defmodule PhoenixAppWeb.Api.GameController do
   use PhoenixAppWeb, :controller
-  alias PhoenixApp.{Accounts, Game}
+  alias PhoenixApp.Game
 
   # GET /api/game/profile
   def profile(conn, _params) do

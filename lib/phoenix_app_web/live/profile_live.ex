@@ -158,17 +158,7 @@ defmodule PhoenixAppWeb.ProfileLive do
     end
   end
 
-  defp resize_image(path, width, height) do
-    try do
-      # Use ImageMagick via System.cmd if available, otherwise just copy
-      case System.cmd("convert", [path, "-resize", "#{width}x#{height}!", path <> "_resized"]) do
-        {_, 0} -> {:ok, path <> "_resized"}
-        _ -> {:ok, path}  # Fallback to original if convert fails
-      end
-    rescue
-      _ -> {:ok, path}  # Fallback to original if any error
-    end
-  end
+  # resize_image function removed - not used
 
   defp error_to_string(:too_large), do: "File too large (max 5MB)"
   defp error_to_string(:not_accepted), do: "Invalid file type (only JPG, PNG allowed)"

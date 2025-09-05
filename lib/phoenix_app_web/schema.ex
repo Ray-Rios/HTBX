@@ -3,7 +3,6 @@ defmodule PhoenixAppWeb.Schema do
   alias PhoenixApp.{Accounts, Game}
 
   import_types Absinthe.Type.Custom
-  import_types PhoenixAppWeb.Schema.GameCmsTypes
 
   # Types
   object :user do
@@ -38,8 +37,7 @@ defmodule PhoenixAppWeb.Schema do
       end
     end
 
-    # Import game CMS queries
-    import_fields :game_cms_queries
+
   end
 
   # Mutations
@@ -77,8 +75,7 @@ defmodule PhoenixAppWeb.Schema do
       end
     end
 
-    # Import game CMS mutations
-    import_fields :game_cms_mutations
+
   end
 
   # Context function to add current user to resolution context

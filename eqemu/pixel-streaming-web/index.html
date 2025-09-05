@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EQEmu - Browser EverQuest</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏰</text></svg>">
+</head>
+<body>
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="logo">🏰</div>
+            <h1>EQEmu</h1>
+            <p>Browser-based EverQuest</p>
+            <div class="loading-spinner"></div>
+            <div id="loading-status">Connecting to server...</div>
+        </div>
+    </div>
+
+    <div id="game-container" class="game-container hidden">
+        <!-- Game Stream Canvas -->
+        <div id="stream-container" class="stream-container">
+            <video id="game-video" class="game-video" autoplay muted playsinline></video>
+            <canvas id="input-overlay" class="input-overlay"></canvas>
+        </div>
+
+        <!-- Game UI Overlay -->
+        <div id="game-ui" class="game-ui">
+            <!-- Connection Status -->
+            <div id="connection-status" class="connection-status">
+                <span id="status-indicator" class="status-indicator"></span>
+                <span id="status-text">Connecting...</span>
+            </div>
+
+            <!-- Game Controls Help -->
+            <div id="controls-help" class="controls-help hidden">
+                <h3>🎮 Controls</h3>
+                <div class="controls-grid">
+                    <div class="control-item">
+                        <kbd>W A S D</kbd>
+                        <span>Move</span>
+                    </div>
+                    <div class="control-item">
+                        <kbd>Mouse</kbd>
+                        <span>Look Around</span>
+                    </div>
+                    <div class="control-item">
+                        <kbd>Tab</kbd>
+                        <span>Target</span>
+                    </div>
+                    <div class="control-item">
+                        <kbd>Enter</kbd>
+                        <span>Chat</span>
+                    </div>
+                    <div class="control-item">
+                        <kbd>I</kbd>
+                        <span>Inventory</span>
+                    </div>
+                    <div class="control-item">
+                        <kbd>C</kbd>
+                        <span>Character</span>
+                    </div>
+                    <div class="control-item">
+                        <kbd>Esc</kbd>
+                        <span>Menu</span>
+                    </div>
+                    <div class="control-item">
+                        <kbd>F11</kbd>
+                        <span>Fullscreen</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Stats -->
+            <div id="game-stats" class="game-stats hidden">
+                <div class="stat-item">
+                    <span class="stat-label">Players Online:</span>
+                    <span id="players-online" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Zones Loaded:</span>
+                    <span id="zones-loaded" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Server Status:</span>
+                    <span id="server-status" class="stat-value">Unknown</span>
+                </div>
+            </div>
+
+            <!-- Control Buttons -->
+            <div id="control-buttons" class="control-buttons">
+                <button id="start-game-btn" class="control-btn primary">
+                    🎮 Start Game
+                </button>
+                <button id="stop-game-btn" class="control-btn danger hidden">
+                    🛑 Stop Game
+                </button>
+                <button id="fullscreen-btn" class="control-btn">
+                    🔍 Fullscreen
+                </button>
+                <button id="help-btn" class="control-btn">
+                    ❓ Controls
+                </button>
+                <button id="stats-btn" class="control-btn">
+                    📊 Stats
+                </button>
+            </div>
+        </div>
+
+        <!-- Error Messages -->
+        <div id="error-container" class="error-container hidden">
+            <div class="error-content">
+                <h3>❌ Connection Error</h3>
+                <p id="error-message">Unable to connect to game server</p>
+                <button id="retry-btn" class="control-btn primary">🔄 Retry</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio for game sounds -->
+    <audio id="game-audio" autoplay></audio>
+
+    <script src="pixel-streaming-client.js"></script>
+    <script src="game-ui.js"></script>
+</body>
+</html>

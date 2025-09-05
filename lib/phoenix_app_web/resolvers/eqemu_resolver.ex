@@ -1,6 +1,6 @@
 defmodule PhoenixAppWeb.Resolvers.EqemuResolver do
   alias PhoenixApp.EqemuGame
-  alias PhoenixApp.Accounts
+  # Note: Accounts removed - not used in EQEmu resolver
 
   # Character Resolvers
   def get_character(_parent, %{id: id}, %{context: %{current_user: user}}) do
@@ -313,14 +313,14 @@ defmodule PhoenixAppWeb.Resolvers.EqemuResolver do
   end
 
   # NPC Resolvers
-  def get_zone_npcs(_parent, %{zone_id: zone_id}, _resolution) do
+  def get_zone_npcs(_parent, %{zone_id: _zone_id}, _resolution) do
     # This would need to be implemented in EqemuGame context
     {:ok, []}
   end
 
   # Spell Resolvers
-  def get_class_spells(_parent, %{class_id: class_id} = args, _resolution) do
-    level = Map.get(args, :level, 65)
+  def get_class_spells(_parent, %{class_id: _class_id} = args, _resolution) do
+    _level = Map.get(args, :level, 65)
     # This would need to be implemented in EqemuGame context
     {:ok, []}
   end
@@ -359,7 +359,7 @@ defmodule PhoenixAppWeb.Resolvers.EqemuResolver do
     base_hp + race_bonus
   end
 
-  defp calculate_starting_mana(race, class) do
+  defp calculate_starting_mana(_race, class) do
     case class do
       1 -> 0    # Warrior
       2 -> 80   # Cleric

@@ -1,7 +1,6 @@
 defmodule PhoenixAppWeb.GamePlayerLive do
   use PhoenixAppWeb, :live_view
-  alias PhoenixApp.Accounts
-  alias PhoenixApp.Game.GameSession
+  # Note: Game functionality simplified
 
   on_mount {PhoenixAppWeb.UserAuth, :require_authenticated_user}
 
@@ -109,7 +108,7 @@ defmodule PhoenixAppWeb.GamePlayerLive do
     ~H"""
     <div class="game-player-dashboard">
       <div class="dashboard-header">
-        <h1>🎮 ActionRPG Dashboard</h1>
+        <h1>🎮 EQEmu Dashboard</h1>
         <div class="server-info">
           <span class={"server-status #{@server_status.status}"}><%= @server_status.status %></span>
           <span class="player-count"><%= @server_status.players %> players online</span>

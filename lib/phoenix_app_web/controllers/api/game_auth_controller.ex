@@ -138,7 +138,7 @@ defmodule PhoenixAppWeb.Api.GameAuthController do
   end
 
   defp create_game_session(user, token) do
-    game_server_url = System.get_env("GAME_SERVER_URL", "http://localhost:8080")
+    game_server_url = System.get_env("GAME_SERVER_URL", "http://localhost:7000")
     
     payload = %{
       user_id: user.id,

@@ -6,7 +6,7 @@ defmodule PhoenixAppWeb.DashboardLive do
   on_mount {PhoenixAppWeb.Auth, :maybe_authenticated}
   
   
-  defp _get_csrf_token, do: csrf_token_value()
+  # _get_csrf_token function removed - not used
 
   def mount(_params, _session, socket) do
     current_user = socket.assigns[:current_user]

@@ -156,7 +156,7 @@ defmodule PhoenixApp.EqemuGame.Character do
 
   def experience_to_next_level(%__MODULE__{level: level, experience: exp}) do
     next_level_exp = PhoenixApp.EqemuGame.calculate_experience_for_level(level + 1)
-    current_level_exp = PhoenixApp.EqemuGame.calculate_experience_for_level(level)
+    _current_level_exp = PhoenixApp.EqemuGame.calculate_experience_for_level(level)
     next_level_exp - exp
   end
 

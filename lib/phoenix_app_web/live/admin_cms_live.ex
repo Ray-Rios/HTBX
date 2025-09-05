@@ -1,6 +1,6 @@
 defmodule PhoenixAppWeb.AdminCmsLive do
   use PhoenixAppWeb, :live_view
-  alias PhoenixApp.{Game, Repo}
+  alias PhoenixApp.Repo
   alias PhoenixApp.Game.{GameSession, GameEvent, PlayerStats, WorldState}
   import Ecto.Query
 

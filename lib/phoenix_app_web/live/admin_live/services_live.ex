@@ -38,10 +38,10 @@ defmodule PhoenixAppWeb.AdminLive.ServicesLive do
       },
       %{
         name: "Game Server (Rust)",
-        description: "UE5 Action RPG multiplayer backend",
-        url: "http://localhost:8080",
-        port: 8080,
-        status: check_service_status("localhost", 8080),
+        description: "Eqemuue5 backend",
+        url: "http://localhost:9069",
+        port: 9069,
+        status: check_service_status("localhost", 9069),
         type: :game
       },
       %{

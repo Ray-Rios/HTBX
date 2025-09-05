@@ -1,4 +1,3 @@
-```elixir
 # lib/phoenix_app_web/live/eqemu_player_live.ex
 defmodule PhoenixAppWeb.EqemuPlayerLive do
   use PhoenixAppWeb, :live_view
@@ -40,7 +39,7 @@ defmodule PhoenixAppWeb.EqemuPlayerLive do
         {:noreply, assign(socket, characters: characters)
          |> put_flash(:info, "Character '#{character.name}' created successfully")}
       
-      {:error, changeset} ->
+      {:error, _changeset} ->
         {:noreply, put_flash(socket, :error, "Failed to create character")}
     end
   end
@@ -269,4 +268,3 @@ defmodule PhoenixAppWeb.EqemuPlayerLive do
     end
   end
 end
-```

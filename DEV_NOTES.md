@@ -102,12 +102,6 @@ Responsive controls (click to interact)
 🚀 Next Steps for Real UE5:
 To replace the mock with a real UE5 game:
 
-Install UE5 with proper licensing
-Replace mock tools in rust_game/build-tools/ with real UE5 binaries
-Use same pipeline - the infrastructure is production-ready!
-Your build system is now fully functional and ready for real game development! 🎯
-
-
 📡 API Endpoints:
 GraphQL: http://localhost:4000/api/graphql
 GraphiQL: http://localhost:4000/api/graphiql (dev only)
@@ -181,14 +175,12 @@ mix ecto.migrate
 
 cockroach start-single-node --insecure --listen-addr=0.0.0.0 --http-addr=0.0.0.0 --store=/cockroach/cockroach-data
 
-
-
 Open UE5 and load your project
 Enable Pixel Streaming Plugin:
 Edit → Plugins → Search "Pixel Streaming" → Enable
 Package for Linux:
 File → Package Project → Linux (x86_64)
-Choose output directory: C:\PROJEKT\rust_game\Packaged
+Choose output directory: C:\PROJEKT\eqemu\Packaged
 The container will automatically pick up the packaged game
 🌐 Quick Test Links:
 Pixel Streaming: http://localhost:9070
@@ -196,12 +188,3 @@ Game Service: http://localhost:9069
 Phoenix App: http://localhost:4000
 Services Status: http://localhost:4000/admin/services
 Streaming Status: http://localhost:9070/status
-
-
-🚀 Next Steps:
-Close UE5 Editor (if open)
-Right-click ActionRPGMultiplayerStart.uproject → Generate Visual Studio project files
-Open the .sln file in Visual Studio
-Build the project (Ctrl+Shift+B)
-Open UE5 Editor
-Click Play to test

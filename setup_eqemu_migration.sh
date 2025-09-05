@@ -1,12 +1,17 @@
 #!/bin/bash
 
-# EQEmu to UE5 Migration Setup Script
-# This script sets up the complete EQEmu migration system
+# EQEmu PEQ Database Migration Setup Script
+# Converts PEQ MySQL dump to Phoenix PostgreSQL schema
 
 set -e
 
-echo "🎮 EQEmu to UE5 Migration Setup"
-echo "================================"
+echo "🎮 EQEmu PEQ Database Migration Setup"
+echo "======================================"
+
+# Configuration
+PEQ_SQL_FILE="eqemu/migrations/peq.sql"
+TEMP_DIR="tmp/eqemu_migration"
+CONVERTED_SQL_FILE="$TEMP_DIR/peq_converted.sql"
 
 # Colors for output
 RED='\033[0;31m'
@@ -15,893 +20,468 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Function to print colored output
-print_status() {
-    echo -e "${BLUE}[INFO]${NC} $1"
+# Helper functions
+log_info() {
+    echo -e "${BLUE}ℹ️  $1${NC}"
 }
 
-print_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
+log_success() {
+    echo -e "${GREEN}✅ $1${NC}"
 }
 
-print_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
+log_warning() {
+    echo -e "${YELLOW}⚠️  $1${NC}"
 }
 
-print_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
+log_error() {
+    echo -e "${RED}❌ $1${NC}"
 }
 
-# Check dependencies
-check_dependencies() {
-    print_status "Checking dependencies..."
+# Check if PEQ SQL file exists
+check_peq_file() {
+    log_info "Checking for PEQ SQL file..."
     
-    # Check if Elixir is installed
-    if ! command -v elixir &> /dev/null; then
-        print_error "Elixir is not installed. Please install Elixir first."
+    if [ ! -f "$PEQ_SQL_FILE" ]; then
+        log_error "PEQ SQL file not found: $PEQ_SQL_FILE"
+        log_info "Please ensure your peq.sql file is placed in eqemu/migrations/"
+        log_info "You can download it from: https://github.com/ProjectEQ/peqdatabase"
         exit 1
     fi
     
-    # Check if Phoenix is installed
-    if ! command -v mix phx.new &> /dev/null; then
-        print_error "Phoenix is not installed. Please install Phoenix first."
+    # Get file size
+    FILE_SIZE=$(stat -f%z "$PEQ_SQL_FILE" 2>/dev/null || stat -c%s "$PEQ_SQL_FILE" 2>/dev/null || echo "unknown")
+    log_success "Found PEQ SQL file (Size: $FILE_SIZE bytes)"
+}
+
+# Create temporary directory
+setup_temp_dir() {
+    log_info "Setting up temporary directory..."
+    mkdir -p "$TEMP_DIR"
+    log_success "Temporary directory created: $TEMP_DIR"
+}
+
+# Convert MySQL syntax to PostgreSQL
+convert_mysql_to_postgresql() {
+    log_info "Converting MySQL syntax to PostgreSQL..."
+    log_warning "This may take several minutes for large files..."
+    
+    # Create the conversion script
+    cat > "$TEMP_DIR/mysql_to_postgresql.py" << 'EOF'
+#!/usr/bin/env python3
+"""
+MySQL to PostgreSQL Converter for PEQ Database
+Converts MySQL dump syntax to PostgreSQL-compatible SQL
+"""
+
+import re
+import sys
+import os
+
+def convert_mysql_to_postgresql(input_file, output_file):
+    print(f"🔄 Converting {input_file} to PostgreSQL format...")
+    
+    with open(input_file, 'r', encoding='utf-8', errors='ignore') as infile:
+        with open(output_file, 'w', encoding='utf-8') as outfile:
+            line_count = 0
+            converted_lines = 0
+            
+            # Write PostgreSQL header
+            outfile.write("-- Converted PEQ Database for PostgreSQL\n")
+            outfile.write("-- Original MySQL dump converted to PostgreSQL syntax\n\n")
+            outfile.write("SET client_encoding = 'UTF8';\n")
+            outfile.write("SET standard_conforming_strings = on;\n\n")
+            
+            for line in infile:
+                line_count += 1
+                original_line = line
+                
+                # Skip MySQL-specific comments and commands
+                if (line.startswith('/*!') or 
+                    line.startswith('--') or
+                    'SET @' in line or
+                    'SET NAMES' in line or
+                    'SET character_set_client' in line or
+                    'SET FOREIGN_KEY_CHECKS' in line or
+                    'SET UNIQUE_CHECKS' in line or
+                    'SET SQL_MODE' in line or
+                    'SET TIME_ZONE' in line or
+                    'SET SQL_NOTES' in line):
+                    continue
+                
+                # Convert CREATE DATABASE
+                if 'CREATE DATABASE' in line and 'IF NOT EXISTS' in line:
+                    # Skip database creation - we'll use existing Phoenix DB
+                    continue
+                
+                # Convert USE database
+                if line.startswith('USE '):
+                    continue
+                
+                # Convert DROP TABLE IF EXISTS
+                line = re.sub(r'DROP TABLE IF EXISTS `([^`]+)`;', 
+                             r'DROP TABLE IF EXISTS temp_\1 CASCADE;', line)
+                
+                # Convert CREATE TABLE
+                if 'CREATE TABLE' in line:
+                    # Convert table name with backticks to temp_ prefix
+                    line = re.sub(r'CREATE TABLE `([^`]+)`', r'CREATE TEMPORARY TABLE temp_\1', line)
+                    # Remove MySQL engine and charset specifications
+                    line = re.sub(r'\) ENGINE=\w+ DEFAULT CHARSET=\w+;', ');', line)
+                
+                # Convert data types
+                line = re.sub(r'\bint\(\d+\)', 'INTEGER', line)
+                line = re.sub(r'\btinyint\(\d+\)', 'SMALLINT', line)
+                line = re.sub(r'\bsmallint\(\d+\)', 'SMALLINT', line)
+                line = re.sub(r'\bmediumint\(\d+\)', 'INTEGER', line)
+                line = re.sub(r'\bbigint\(\d+\)', 'BIGINT', line)
+                line = re.sub(r'\bfloat\(\d+,\d+\)', 'REAL', line)
+                line = re.sub(r'\bdouble\(\d+,\d+\)', 'DOUBLE PRECISION', line)
+                line = re.sub(r'\bdecimal\(\d+,\d+\)', 'DECIMAL', line)
+                line = re.sub(r'\bvarchar\((\d+)\)', r'VARCHAR(\1)', line)
+                line = re.sub(r'\btext\b', 'TEXT', line)
+                line = re.sub(r'\blongtext\b', 'TEXT', line)
+                line = re.sub(r'\bmediumtext\b', 'TEXT', line)
+                line = re.sub(r'\btinytext\b', 'TEXT', line)
+                line = re.sub(r'\bdatetime\b', 'TIMESTAMP', line)
+                line = re.sub(r'\btimestamp\b', 'TIMESTAMP', line)
+                
+                # Convert AUTO_INCREMENT
+                line = re.sub(r'\bAUTO_INCREMENT\b', '', line)
+                
+                # Convert unsigned
+                line = re.sub(r'\bUNSIGNED\b', '', line)
+                
+                # Remove backticks
+                line = re.sub(r'`([^`]+)`', r'\1', line)
+                
+                # Convert INSERT statements
+                if line.startswith('INSERT INTO '):
+                    # Convert table names in INSERT statements
+                    line = re.sub(r'INSERT INTO ([a-zA-Z_]+)', r'INSERT INTO temp_\1', line)
+                
+                # Convert LOCK/UNLOCK TABLES
+                if 'LOCK TABLES' in line or 'UNLOCK TABLES' in line:
+                    continue
+                
+                # Convert SET statements for character set
+                if line.startswith('SET ') and 'character_set_client' in line:
+                    continue
+                
+                if line != original_line:
+                    converted_lines += 1
+                
+                outfile.write(line)
+                
+                # Progress indicator
+                if line_count % 10000 == 0:
+                    print(f"📊 Processed {line_count} lines, converted {converted_lines} lines")
+    
+    print(f"✅ Conversion complete: {line_count} lines processed, {converted_lines} lines converted")
+
+if __name__ == "__main__":
+    if len(sys.argv) != 3:
+        print("Usage: python3 mysql_to_postgresql.py <input_file> <output_file>")
+        sys.exit(1)
+    
+    input_file = sys.argv[1]
+    output_file = sys.argv[2]
+    
+    if not os.path.exists(input_file):
+        print(f"❌ Input file not found: {input_file}")
+        sys.exit(1)
+    
+    convert_mysql_to_postgresql(input_file, output_file)
+EOF
+
+    # Run the conversion
+    python3 "$TEMP_DIR/mysql_to_postgresql.py" "$PEQ_SQL_FILE" "$CONVERTED_SQL_FILE"
+    
+    if [ $? -eq 0 ]; then
+        log_success "MySQL to PostgreSQL conversion completed"
+    else
+        log_error "Conversion failed"
         exit 1
     fi
-    
-    # Check if PostgreSQL is running
-    if ! pg_isready &> /dev/null; then
-        print_warning "PostgreSQL is not running. Please start PostgreSQL."
-    fi
-    
-    # Check if MySQL client is available (for EQEmu import)
-    if ! command -v mysql &> /dev/null; then
-        print_warning "MySQL client not found. EQEmu data import may not work."
-    fi
-    
-    # Check if Docker is available (for UE5 containers)
-    if ! command -v docker &> /dev/null; then
-        print_warning "Docker not found. UE5 containerization will not be available."
-    fi
-    
-    print_success "Dependencies check completed"
 }
 
-# Setup Phoenix dependencies
-setup_phoenix() {
-    print_status "Setting up Phoenix dependencies..."
-    
-    # Install dependencies
-    mix deps.get
-    
-    # Compile dependencies
-    mix deps.compile
-    
-    print_success "Phoenix dependencies installed"
+# Create Phoenix migration
+create_phoenix_migration() {
+    log_info "Phoenix migration already created: priv/repo/migrations/20250903000001_create_eqemu_schema.exs"
+    log_info "Run: mix ecto.migrate to create the schema"
 }
 
-# Setup database
-setup_database() {
-    print_status "Setting up database..."
+# Create data import script
+create_import_script() {
+    log_info "Creating data import script..."
     
-    # Create database
-    mix ecto.create
-    
-    # Run existing migrations
-    mix ecto.migrate
-    
-    # Run EQEmu schema migration
-    print_status "Running EQEmu schema migration..."
-    mix ecto.migrate
-    
-    print_success "Database setup completed"
-}
+    cat > "$TEMP_DIR/import_peq_data.sql" << EOF
+-- Import PEQ data into Phoenix EQEmu schema
+-- This script maps temporary PEQ tables to Phoenix schema
 
-# Import EQEmu data
-import_eqemu_data() {
-    print_status "Importing EQEmu data..."
-    
-    # Set environment variables for EQEmu database
-    export EQEMU_DB_HOST=${EQEMU_DB_HOST:-"localhost"}
-    export EQEMU_DB_USER=${EQEMU_DB_USER:-"eqemu"}
-    export EQEMU_DB_PASS=${EQEMU_DB_PASS:-"eqemu"}
-    export EQEMU_DB_NAME=${EQEMU_DB_NAME:-"peq"}
-    export EQEMU_DB_PORT=${EQEMU_DB_PORT:-"3306"}
-    
-    print_status "EQEmu DB Config: ${EQEMU_DB_USER}@${EQEMU_DB_HOST}:${EQEMU_DB_PORT}/${EQEMU_DB_NAME}"
-    
-    # Add MyXQL dependency if not present
-    if ! grep -q "myxql" mix.exs; then
-        print_status "Adding MyXQL dependency..."
-        sed -i '/deps do/a\      {:myxql, "~> 0.6.0"},' mix.exs
-        mix deps.get
-    fi
-    
-    # Run the import script
-    print_status "Running EQEmu data import (this may take several minutes)..."
-    mix run priv/repo/eqemu_data_import.exs
-    
-    print_success "EQEmu data import completed"
-}
+-- Import accounts
+INSERT INTO eqemu_accounts (id, user_id, eqemu_id, name, status, expansion, inserted_at, updated_at)
+SELECT 
+    gen_random_uuid(),
+    (SELECT id FROM users WHERE is_admin = true LIMIT 1),
+    id,
+    name,
+    COALESCE(status, 0),
+    COALESCE(expansion, 8),
+    NOW(),
+    NOW()
+FROM temp_account
+WHERE id IS NOT NULL
+ON CONFLICT (eqemu_id) DO NOTHING;
 
-# Setup GraphQL schema
-setup_graphql() {
-    print_status "Setting up GraphQL schema..."
-    
-    # Update main schema file to include EQEmu types
-    if ! grep -q "EqemuTypes" lib/phoenix_app_web/schema.ex; then
-        print_status "Adding EQEmu types to GraphQL schema..."
-        
-        # Backup original schema
-        cp lib/phoenix_app_web/schema.ex lib/phoenix_app_web/schema.ex.backup
-        
-        # Add import for EQEmu types
-        sed -i '/use Absinthe.Schema/a\  import_types PhoenixAppWeb.Schema.EqemuTypes' lib/phoenix_app_web/schema.ex
-        
-        # Add EQEmu queries to query object
-        sed -i '/object :query do/a\    import_fields :eqemu_queries' lib/phoenix_app_web/schema.ex
-        
-        # Add EQEmu mutations to mutation object
-        sed -i '/object :mutation do/a\    import_fields :eqemu_mutations' lib/phoenix_app_web/schema.ex
-        
-        # Add EQEmu subscriptions to subscription object
-        sed -i '/object :subscription do/a\    import_fields :eqemu_subscriptions' lib/phoenix_app_web/schema.ex
-    fi
-    
-    print_success "GraphQL schema updated"
-}
+-- Import characters
+INSERT INTO eqemu_characters (
+    id, user_id, eqemu_id, account_id, name, race, class, level, 
+    zone_id, x, y, z, heading, gender, hp, mana, endurance,
+    str, sta, cha, dex, int, agi, wis, platinum, gold, silver, copper,
+    exp, aa_points, inserted_at, updated_at
+)
+SELECT 
+    gen_random_uuid(),
+    (SELECT user_id FROM eqemu_accounts WHERE eqemu_id = temp_character_data.account_id LIMIT 1),
+    id,
+    account_id,
+    name,
+    COALESCE(race, 1),
+    COALESCE(class, 1),
+    COALESCE(level, 1),
+    COALESCE(zone_id, 1),
+    COALESCE(x, 0.0),
+    COALESCE(y, 0.0),
+    COALESCE(z, 0.0),
+    COALESCE(heading, 0.0),
+    COALESCE(gender, 0),
+    COALESCE(hp, 100),
+    COALESCE(mana, 0),
+    COALESCE(endurance, 100),
+    COALESCE(str, 75),
+    COALESCE(sta, 75),
+    COALESCE(cha, 75),
+    COALESCE(dex, 75),
+    COALESCE(int, 75),
+    COALESCE(agi, 75),
+    COALESCE(wis, 75),
+    COALESCE(platinum, 0),
+    COALESCE(gold, 0),
+    COALESCE(silver, 0),
+    COALESCE(copper, 0),
+    COALESCE(exp, 0),
+    COALESCE(aa_points, 0),
+    NOW(),
+    NOW()
+FROM temp_character_data
+WHERE id IS NOT NULL AND account_id IS NOT NULL
+ON CONFLICT (eqemu_id) DO NOTHING;
 
-# Create UE5 project structure
-setup_ue5_project() {
-    print_status "Setting up UE5 project structure..."
-    
-    # Create UE5 project directory
-    mkdir -p ue5_eqemu_client
-    cd ue5_eqemu_client
-    
-    # Create basic UE5 project structure
-    mkdir -p Source/EQEmuUE5/{Public,Private}
-    mkdir -p Content/{Blueprints,Maps,Materials,Meshes,Textures,Audio,UI}
-    mkdir -p Config
-    
-    # Create basic .uproject file
-    cat > EQEmuUE5.uproject << 'EOF'
-{
-    "FileVersion": 3,
-    "EngineAssociation": "5.3",
-    "Category": "",
-    "Description": "EQEmu UE5 Client",
-    "Modules": [
-        {
-            "Name": "EQEmuUE5",
-            "Type": "Runtime",
-            "LoadingPhase": "Default",
-            "AdditionalDependencies": [
-                "Engine",
-                "CoreUObject",
-                "Http",
-                "Json",
-                "WebSockets",
-                "UMG"
-            ]
-        }
-    ],
-    "Plugins": [
-        {
-            "Name": "PixelStreaming",
-            "Enabled": true
-        },
-        {
-            "Name": "WebBrowserWidget",
-            "Enabled": true
-        }
-    ]
-}
+-- Import items (limited to first 10000 for initial testing)
+INSERT INTO eqemu_items (
+    id, eqemu_id, name, damage, delay, itemtype, weight, price,
+    ac, hp, mana, str, sta, cha, dex, int, agi, wis,
+    classes, races, slots, reqlevel, inserted_at, updated_at
+)
+SELECT 
+    gen_random_uuid(),
+    id,
+    COALESCE(name, 'Unknown Item'),
+    COALESCE(damage, 0),
+    COALESCE(delay, 0),
+    COALESCE(itemtype, 0),
+    COALESCE(weight, 0),
+    COALESCE(price, 0),
+    COALESCE(ac, 0),
+    COALESCE(hp, 0),
+    COALESCE(mana, 0),
+    COALESCE(astr, 0),
+    COALESCE(asta, 0),
+    COALESCE(acha, 0),
+    COALESCE(adex, 0),
+    COALESCE(aint, 0),
+    COALESCE(aagi, 0),
+    COALESCE(awis, 0),
+    COALESCE(classes, 0),
+    COALESCE(races, 0),
+    COALESCE(slots, 0),
+    COALESCE(reqlevel, 0),
+    NOW(),
+    NOW()
+FROM temp_items
+WHERE id IS NOT NULL
+LIMIT 10000
+ON CONFLICT (eqemu_id) DO NOTHING;
+
+-- Import zones
+INSERT INTO eqemu_zones (
+    id, eqemu_id, short_name, long_name, safe_x, safe_y, safe_z,
+    min_level, max_level, expansion, inserted_at, updated_at
+)
+SELECT 
+    gen_random_uuid(),
+    zoneidnumber,
+    short_name,
+    COALESCE(long_name, short_name),
+    COALESCE(safe_x, 0.0),
+    COALESCE(safe_y, 0.0),
+    COALESCE(safe_z, 0.0),
+    COALESCE(min_level, 1),
+    COALESCE(max_level, 255),
+    COALESCE(expansion, 0),
+    NOW(),
+    NOW()
+FROM temp_zone
+WHERE zoneidnumber IS NOT NULL AND short_name IS NOT NULL
+ON CONFLICT (eqemu_id) DO NOTHING;
+
+-- Import guilds
+INSERT INTO eqemu_guilds (
+    id, eqemu_id, name, leader, inserted_at, updated_at
+)
+SELECT 
+    gen_random_uuid(),
+    id,
+    name,
+    COALESCE(leader, 0),
+    NOW(),
+    NOW()
+FROM temp_guilds
+WHERE id IS NOT NULL AND name IS NOT NULL
+ON CONFLICT (eqemu_id) DO NOTHING;
+
+-- Show import summary
+SELECT 'Accounts' as table_name, COUNT(*) as record_count FROM eqemu_accounts
+UNION ALL
+SELECT 'Characters', COUNT(*) FROM eqemu_characters
+UNION ALL
+SELECT 'Items', COUNT(*) FROM eqemu_items
+UNION ALL
+SELECT 'Zones', COUNT(*) FROM eqemu_zones
+UNION ALL
+SELECT 'Guilds', COUNT(*) FROM eqemu_guilds;
 EOF
 
-    # Create basic Build.cs file
-    cat > Source/EQEmuUE5/EQEmuUE5.Build.cs << 'EOF'
-using UnrealBuildTool;
-
-public class EQEmuUE5 : ModuleRules
-{
-    public EQEmuUE5(ReadOnlyTargetRules Target) : base(Target)
-    {
-        PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-
-        PublicDependencyModuleNames.AddRange(new string[] { 
-            "Core", 
-            "CoreUObject", 
-            "Engine", 
-            "InputCore",
-            "Http",
-            "Json",
-            "WebSockets",
-            "UMG",
-            "Slate",
-            "SlateCore"
-        });
-
-        PrivateDependencyModuleNames.AddRange(new string[] { });
-    }
+    log_success "Import script created: $TEMP_DIR/import_peq_data.sql"
 }
-EOF
 
-    # Create basic game mode header
-    cat > Source/EQEmuUE5/Public/EQEmuGameMode.h << 'EOF'
-#pragma once
-
-#include "CoreMinimal.h"
-#include "GameFramework/GameModeBase.h"
-#include "Http.h"
-#include "Json.h"
-#include "WebSocketsModule.h"
-#include "IWebSocket.h"
-#include "EQEmuGameMode.generated.h"
-
-UCLASS()
-class EQEMUUE5_API AEQEmuGameMode : public AGameModeBase
-{
-    GENERATED_BODY()
-
-public:
-    AEQEmuGameMode();
-
-protected:
-    virtual void BeginPlay() override;
-    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-
-    // Phoenix API Integration
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Phoenix API")
-    FString PhoenixAPIUrl = TEXT("http://localhost:4000/api/graphql");
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Phoenix API")
-    FString PhoenixWebSocketUrl = TEXT("ws://localhost:4000/socket/websocket");
-
-    // WebSocket Connection
-    TSharedPtr<IWebSocket> WebSocket;
-
-public:
-    // Character Management
-    UFUNCTION(BlueprintCallable, Category = "EQEmu")
-    void LoadCharacter(const FString& CharacterId);
-
-    UFUNCTION(BlueprintCallable, Category = "EQEmu")
-    void SaveCharacterPosition(const FString& CharacterId, FVector Position, float Heading);
-
-    // Zone Management
-    UFUNCTION(BlueprintCallable, Category = "EQEmu")
-    void LoadZone(int32 ZoneId);
-
-private:
-    void SendGraphQLQuery(const FString& Query, TFunction<void(TSharedPtr<FJsonObject>)> OnSuccess);
-    void OnWebSocketConnected();
-    void OnWebSocketMessage(const FString& Message);
-    void OnWebSocketClosed(int32 StatusCode, const FString& Reason, bool bWasClean);
-
-    FString CurrentUserId;
-    FString AuthToken;
-};
-EOF
-
-    cd ..
+# Create usage instructions
+create_instructions() {
+    log_info "Creating usage instructions..."
     
-    print_success "UE5 project structure created"
-}
+    cat > "$TEMP_DIR/IMPORT_INSTRUCTIONS.md" << 'EOF'
+# EQEmu PEQ Database Import Instructions
 
-# Create Docker setup for pixel streaming
-setup_docker() {
-    print_status "Setting up Docker configuration..."
-    
-    # Create UE5 Dockerfile
-    cat > Dockerfile.ue5-eqemu << 'EOF'
-FROM ghcr.io/epicgames/unreal-engine:dev-5.3 as builder
+## Overview
+This guide helps you import your PEQ (Project EQ) database into your Phoenix EQEmu application.
 
-# Copy UE5 project
-COPY ue5_eqemu_client /app/ue5_eqemu_client
-WORKDIR /app/ue5_eqemu_client
+## Prerequisites
+- PEQ SQL dump file placed in `eqemu/migrations/peq.sql`
+- Phoenix application with PostgreSQL database
+- Docker and docker-compose setup
 
-# Build the project
-RUN /home/ue4/UnrealEngine/Engine/Build/BatchFiles/RunUAT.sh BuildCookRun \
-    -project=/app/ue5_eqemu_client/EQEmuUE5.uproject \
-    -platform=Linux \
-    -configuration=Shipping \
-    -cook -build -stage -package \
-    -archive -archivedirectory=/app/packaged
+## Step-by-Step Import Process
 
-FROM ubuntu:20.04
-
-# Install dependencies for pixel streaming
-RUN apt-get update && apt-get install -y \
-    nodejs \
-    npm \
-    xvfb \
-    x11vnc \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy packaged game
-COPY --from=builder /app/packaged /app/game
-
-# Copy pixel streaming server
-COPY rust_game/pixel-streaming-server.js /app/
-COPY rust_game/pixel-streaming-web/ /app/web/
-
-# Install Node.js dependencies
-WORKDIR /app
-RUN npm install ws express
-
-# Expose ports
-EXPOSE 8080 8888
-
-# Start script
-COPY start-eqemu-ue5.sh /start.sh
-RUN chmod +x /start.sh
-
-CMD ["/start.sh"]
-EOF
-
-    # Create start script for UE5 container
-    cat > start-eqemu-ue5.sh << 'EOF'
-#!/bin/bash
-
-# Start virtual display
-Xvfb :99 -screen 0 1920x1080x24 &
-export DISPLAY=:99
-
-# Start UE5 game with pixel streaming
-cd /app/game
-./EQEmuUE5 -PixelStreamingURL=ws://localhost:8888 -RenderOffScreen &
-
-# Start pixel streaming server
-cd /app
-node pixel-streaming-server.js --StreamerPort=8888 --HttpPort=8080 &
-
-# Wait for all processes
-wait
-EOF
-
-    # Create docker-compose for complete EQEmu system
-    cat > docker-compose.eqemu-ue5.yml << 'EOF'
-version: '3.8'
-
-services:
-  postgres:
-    image: postgres:15
-    environment:
-      POSTGRES_DB: phoenix_app_dev
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-
-  mysql:
-    image: mysql:8.0
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpass
-      MYSQL_DATABASE: peq
-      MYSQL_USER: eqemu
-      MYSQL_PASSWORD: eqemu
-    volumes:
-      - mysql_data:/var/lib/mysql
-    ports:
-      - "3306:3306"
-
-  phoenix:
-    build: .
-    depends_on:
-      - postgres
-      - mysql
-    environment:
-      DATABASE_URL: ecto://postgres:postgres@postgres/phoenix_app_dev
-      EQEMU_DB_HOST: mysql
-      EQEMU_DB_USER: eqemu
-      EQEMU_DB_PASS: eqemu
-      EQEMU_DB_NAME: peq
-    ports:
-      - "4000:4000"
-    volumes:
-      - .:/app
-    command: mix phx.server
-
-  ue5-client:
-    build:
-      context: .
-      dockerfile: Dockerfile.ue5-eqemu
-    depends_on:
-      - phoenix
-    ports:
-      - "8080:8080"  # Pixel streaming web interface
-      - "8888:8888"  # Pixel streaming WebSocket
-    environment:
-      PHOENIX_API_URL: http://phoenix:4000/api/graphql
-      PHOENIX_WS_URL: ws://phoenix:4000/socket/websocket
-
-volumes:
-  postgres_data:
-  mysql_data:
-EOF
-
-    print_success "Docker configuration created"
-}
-
-# Create test GraphQL queries
-create_test_queries() {
-    print_status "Creating test GraphQL queries..."
-    
-    cat > test_eqemu_graphql.exs << 'EOF'
-# Test EQEmu GraphQL Queries
-
-# Test character creation
-mutation_create_character = """
-mutation CreateCharacter($input: EqemuCharacterInput!) {
-  createEqemuCharacter(input: $input) {
-    id
-    name
-    level
-    raceName
-    className
-    hp
-    mana
-    endurance
-    insertedAt
-  }
-}
-"""
-
-variables_create_character = %{
-  "input" => %{
-    "name" => "TestWarrior",
-    "race" => 1,  # Human
-    "class" => 1, # Warrior
-    "gender" => 0,
-    "face" => 1,
-    "hairColor" => 1,
-    "hairStyle" => 1
-  }
-}
-
-# Test character query
-query_characters = """
-query MyCharacters {
-  myEqemuCharacters {
-    id
-    name
-    level
-    raceName
-    className
-    hp
-    mana
-    endurance
-    zoneId
-    x
-    y
-    z
-    lastLogin
-    stats {
-      str
-      sta
-      agi
-      dex
-      int
-      wis
-      cha
-      ac
-      atk
-    }
-  }
-}
-"""
-
-# Test items query
-query_items = """
-query Items($filter: String, $limit: Int) {
-  eqemuItems(filter: $filter, limit: $limit) {
-    id
-    itemId
-    name
-    itemTypeName
-    damage
-    delay
-    ac
-    hp
-    mana
-    str: astr
-    sta: asta
-    agi: aagi
-    dex: adex
-    int: aint
-    wis: awis
-    cha: acha
-  }
-}
-"""
-
-variables_items = %{
-  "filter" => "sword",
-  "limit" => 10
-}
-
-# Test zones query
-query_zones = """
-query Zones {
-  eqemuZones {
-    id
-    zoneidnumber
-    shortName
-    longName
-    safeX
-    safeY
-    safeZ
-    minLevel
-    expansion
-  }
-}
-"""
-
-IO.puts("EQEmu GraphQL Test Queries Created")
-IO.puts("==================================")
-IO.puts("1. Create Character Mutation:")
-IO.puts(mutation_create_character)
-IO.puts("\nVariables:")
-IO.inspect(variables_create_character, pretty: true)
-
-IO.puts("\n2. Query Characters:")
-IO.puts(query_characters)
-
-IO.puts("\n3. Query Items:")
-IO.puts(query_items)
-IO.puts("\nVariables:")
-IO.inspect(variables_items, pretty: true)
-
-IO.puts("\n4. Query Zones:")
-IO.puts(query_zones)
-
-IO.puts("\nTo test these queries:")
-IO.puts("1. Start the Phoenix server: mix phx.server")
-IO.puts("2. Visit http://localhost:4000/api/graphiql")
-IO.puts("3. Copy and paste the queries above")
-EOF
-
-    print_success "Test GraphQL queries created"
-}
-
-# Create comprehensive README
-create_documentation() {
-    print_status "Creating documentation..."
-    
-    cat > EQEMU_UE5_README.md << 'EOF'
-# EQEmu to UE5 Migration - Complete Implementation
-
-## 🎮 Overview
-
-This project implements a complete migration of EQEmu (EverQuest Emulator) to a modern UE5-based system with Phoenix GraphQL API backend.
-
-## 🏗️ Architecture
-
-```
-Browser Client ←→ Phoenix GraphQL API ←→ PostgreSQL Database
-     ↑                      ↑                     ↑
-UE5 Game Client    Real-time WebSocket      EQEmu Data
-     ↓                      ↓                     ↓
-Pixel Streaming ←→ Phoenix LiveView ←→ Admin Dashboard
-```
-
-## 🚀 Features Implemented
-
-### ✅ Phase 1: Database Schema Migration
-- Complete EQEmu schema ported to PostgreSQL
-- All major tables: characters, items, zones, NPCs, spells, quests
-- Proper relationships and constraints
-- UUID primary keys for modern architecture
-
-### ✅ Phase 2: GraphQL API Layer
-- Comprehensive GraphQL schema for all EQEmu entities
-- Real-time subscriptions for live updates
-- Efficient resolvers with DataLoader
-- Authentication and authorization
-
-### ✅ Phase 3: UE5 Integration Foundation
-- UE5 project structure with Phoenix integration
-- C++ classes for EQEmu game logic
-- WebSocket communication with Phoenix
-- Pixel streaming setup for browser access
-
-## 📊 Database Schema
-
-### Core Tables
-- `eqemu_characters` - Player characters with full EQ stats
-- `eqemu_character_stats` - Character attributes and resistances
-- `eqemu_items` - All items with complete EQ item system
-- `eqemu_character_inventory` - Character equipment and bags
-- `eqemu_guilds` - Guild system with ranks and permissions
-- `eqemu_zones` - All zones with positioning and properties
-- `eqemu_npcs` - NPCs with AI and combat stats
-- `eqemu_spells` - Complete spell system
-- `eqemu_tasks` - Quest and task system
-
-## 🔧 Setup Instructions
-
-### Prerequisites
-- Elixir 1.15+
-- Phoenix 1.7+
-- PostgreSQL 15+
-- MySQL 8.0+ (for EQEmu data import)
-- Docker (optional, for UE5 containers)
-- Unreal Engine 5.3+ (for game client)
-
-### Quick Start
+### 1. Prepare the Database
 ```bash
-# Run the setup script
-chmod +x setup_eqemu_migration.sh
-./setup_eqemu_migration.sh
+# Start your Phoenix application
+docker-compose up -d db
 
-# Or manual setup:
-mix deps.get
-mix ecto.create
-mix ecto.migrate
-mix run priv/repo/eqemu_data_import.exs
-mix phx.server
+# Run Phoenix migrations to create EQEmu schema
+docker-compose exec web mix ecto.migrate
 ```
 
-### Environment Variables
+### 2. Import PEQ Data
 ```bash
-# EQEmu Database (for import)
-export EQEMU_DB_HOST=localhost
-export EQEMU_DB_USER=eqemu
-export EQEMU_DB_PASS=eqemu
-export EQEMU_DB_NAME=peq
-export EQEMU_DB_PORT=3306
+# Load the converted SQL into temporary tables
+docker-compose exec db psql -U postgres -d phoenix_app_dev -f /tmp/eqemu_migration/peq_converted.sql
 
-# Phoenix Database
-export DATABASE_URL=ecto://postgres:postgres@localhost/phoenix_app_dev
+# Import data into Phoenix schema
+docker-compose exec db psql -U postgres -d phoenix_app_dev -f /tmp/eqemu_migration/import_peq_data.sql
 ```
 
-## 🎯 GraphQL API Usage
-
-### Character Management
-```graphql
-# Create a new character
-mutation CreateCharacter($input: EqemuCharacterInput!) {
-  createEqemuCharacter(input: $input) {
-    id
-    name
-    level
-    raceName
-    className
-  }
-}
-
-# Get user's characters
-query MyCharacters {
-  myEqemuCharacters {
-    id
-    name
-    level
-    raceName
-    className
-    hp
-    mana
-    stats {
-      str
-      sta
-      agi
-      dex
-      int
-      wis
-      cha
-    }
-  }
-}
-```
-
-### Item System
-```graphql
-# Search items
-query SearchItems($filter: String!) {
-  eqemuItems(filter: $filter, limit: 20) {
-    id
-    name
-    itemTypeName
-    damage
-    delay
-    ac
-    hp
-    mana
-  }
-}
-```
-
-### Zone System
-```graphql
-# Get all zones
-query Zones {
-  eqemuZones {
-    id
-    shortName
-    longName
-    safeX
-    safeY
-    safeZ
-    minLevel
-  }
-}
-```
-
-## 🎮 UE5 Client Integration
-
-### C++ Classes
-- `AEQEmuGameMode` - Main game mode with Phoenix integration
-- `AEQEmuCharacter` - Character class with EQ stats and equipment
-- `AEQEmuZone` - Zone loading and management
-- `UEQEmuAPIClient` - HTTP/WebSocket client for Phoenix API
-
-### Blueprint Integration
-- Character creation and customization
-- Inventory and equipment management
-- Zone transitions and loading
-- Real-time chat and guild systems
-
-## 🐳 Docker Deployment
-
-### Development
+### 3. Verify Import
 ```bash
-docker-compose -f docker-compose.eqemu-ue5.yml up -d
+# Run the Phoenix importer script
+docker-compose exec web mix run priv/repo/eqemu_peq_importer.exs
 ```
 
-### Production
+### 4. Test GraphQL API
 ```bash
-# Build UE5 client
-docker build -f Dockerfile.ue5-eqemu -t eqemu-ue5-client .
-
-# Deploy with scaling
-docker-compose -f docker-compose.eqemu-ue5.yml up -d --scale ue5-client=3
+# Test the EQEmu GraphQL endpoints
+curl -X POST http://localhost:4000/api/graphql \
+  -H "Content-Type: application/json" \
+  -d '{"query": "{ eqemuCharacters { id name level race class } }"}'
 ```
 
-## 📈 Performance & Scaling
+## Important Notes
 
-### Database Optimization
-- Indexed queries for character lookups
-- Efficient inventory queries with preloading
-- Zone-based data partitioning
-- Connection pooling with PgBouncer
+### Data Size Considerations
+- The PEQ database is very large (50MB+ SQL file)
+- Initial import may take 30+ minutes
+- Consider importing in batches for better performance
 
-### Real-time Features
-- WebSocket subscriptions for character updates
-- Zone-based event broadcasting
-- Efficient PubSub with Phoenix.PubSub
-- Rate limiting for API calls
+### Schema Mapping
+- Original PEQ IDs are preserved in `eqemu_id` fields
+- Phoenix UUIDs are used as primary keys
+- All data is linked to Phoenix user accounts
 
-### UE5 Optimization
-- Level streaming for large zones
-- LOD systems for NPCs and objects
-- Texture streaming for reduced memory
-- Network optimization for multiplayer
+### Customization
+- Edit `import_peq_data.sql` to customize data mapping
+- Modify field mappings based on your needs
+- Add additional tables as required
 
-## 🔒 Security
+## Troubleshooting
 
-### Authentication
-- JWT-based authentication
-- User session management
-- Character ownership validation
-- Admin role permissions
+### Common Issues
+1. **File too large**: Split the SQL file into smaller chunks
+2. **Memory issues**: Increase Docker memory limits
+3. **Timeout errors**: Import in smaller batches
+4. **Character encoding**: Ensure UTF-8 encoding
 
-### Data Protection
-- Input validation and sanitization
-- SQL injection prevention with Ecto
-- Rate limiting on GraphQL queries
-- Secure WebSocket connections
+### Performance Tips
+- Use `COPY` instead of `INSERT` for large datasets
+- Create indexes after import, not before
+- Consider using `UNLOGGED` tables for temporary data
+- Vacuum and analyze after import
 
-## 🧪 Testing
+## Next Steps
+After successful import:
+1. Test character creation in Phoenix
+2. Verify item data in GraphQL
+3. Test zone transitions
+4. Configure UE5 game integration
+5. Set up pixel streaming
 
-### GraphQL API
-```bash
-# Run GraphQL tests
-mix test test/phoenix_app_web/resolvers/eqemu_resolver_test.exs
-
-# Test with GraphiQL
-open http://localhost:4000/api/graphiql
-```
-
-### Database
-```bash
-# Test migrations
-mix ecto.rollback --all
-mix ecto.migrate
-
-# Test data import
-mix run priv/repo/eqemu_data_import.exs
-```
-
-## 📚 API Documentation
-
-### GraphQL Schema
-- Visit `/api/graphiql` for interactive documentation
-- Schema introspection available
-- Real-time subscription testing
-
-### REST Endpoints
-- `/api/health` - Health check
-- `/api/metrics` - Performance metrics
-- `/uploads/*` - File uploads and assets
-
-## 🎯 Roadmap
-
-### Phase 4: Advanced Features
-- [ ] Voice chat integration
-- [ ] Advanced guild systems
-- [ ] Player housing
-- [ ] Auction house/marketplace
-- [ ] Advanced quest scripting
-
-### Phase 5: Modern Enhancements
-- [ ] VR support
-- [ ] Mobile client
-- [ ] Streaming integration
-- [ ] AI-powered NPCs
-- [ ] Procedural content generation
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🙏 Acknowledgments
-
-- EQEmu Project for the original server code
-- Project EQ for the database content
-- Epic Games for Unreal Engine 5
-- Phoenix Framework team
-- Elixir community
+## Support
+- Check Phoenix logs: `docker-compose logs web`
+- Check database logs: `docker-compose logs db`
+- Verify data: Connect to database and run queries
 EOF
 
-    print_success "Documentation created"
+    log_success "Instructions created: $TEMP_DIR/IMPORT_INSTRUCTIONS.md"
 }
 
 # Main execution
 main() {
-    echo "Starting EQEmu to UE5 migration setup..."
-    echo "This will set up a complete modern EverQuest system"
-    echo ""
+    log_info "Starting EQEmu PEQ migration setup..."
     
-    check_dependencies
-    setup_phoenix
-    setup_database
+    check_peq_file
+    setup_temp_dir
+    convert_mysql_to_postgresql
+    create_phoenix_migration
+    create_import_script
+    create_instructions
     
-    # Ask user if they want to import EQEmu data
-    read -p "Do you want to import EQEmu data? This requires MySQL access (y/N): " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        import_eqemu_data
-    else
-        print_warning "Skipping EQEmu data import. You can run it later with: mix run priv/repo/eqemu_data_import.exs"
-    fi
-    
-    setup_graphql
-    setup_ue5_project
-    setup_docker
-    create_test_queries
-    create_documentation
-    
-    print_success "EQEmu to UE5 migration setup completed!"
+    log_success "EQEmu PEQ migration setup completed!"
     echo ""
-    echo "🎮 Next Steps:"
-    echo "1. Start the Phoenix server: mix phx.server"
-    echo "2. Visit GraphiQL: http://localhost:4000/api/graphiql"
-    echo "3. Test the API with the queries in test_eqemu_graphql.exs"
-    echo "4. Open UE5 and load the project in ue5_eqemu_client/"
-    echo "5. Build and run the UE5 client"
+    log_info "Next steps:"
+    echo "  1. Review the instructions: $TEMP_DIR/IMPORT_INSTRUCTIONS.md"
+    echo "  2. Run Phoenix migrations: docker-compose exec web mix ecto.migrate"
+    echo "  3. Import PEQ data using the generated scripts"
+    echo "  4. Test your EQEmu GraphQL API"
     echo ""
-    echo "📚 Documentation: See EQEMU_UE5_README.md for detailed instructions"
-    echo ""
-    echo "🐳 Docker: Run 'docker-compose -f docker-compose.eqemu-ue5.yml up' for containerized setup"
+    log_warning "Note: The PEQ database is very large. Import may take 30+ minutes."
 }
 
 # Run main function

@@ -1,5 +1,6 @@
 defmodule PhoenixAppWeb.Schema.EqemuTypes do
   use Absinthe.Schema.Notation
+  import Absinthe.Resolution.Helpers, only: [dataloader: 1]
   alias PhoenixAppWeb.Resolvers.EqemuResolver
 
   # Character Types
@@ -55,8 +56,9 @@ defmodule PhoenixAppWeb.Schema.EqemuTypes do
     field :inventory, list_of(:eqemu_character_inventory), resolve: dataloader(PhoenixApp.EqemuGame)
     field :guild_membership, :eqemu_guild_member, resolve: dataloader(PhoenixApp.EqemuGame)
     field :character_tasks, list_of(:eqemu_character_task), resolve: dataloader(PhoenixApp.EqemuGame)
-  end  obj
-ect :eqemu_character_stats do
+  end
+
+  object :eqemu_character_stats do
     field :id, non_null(:id)
     field :character_id, non_null(:id)
     field :str, :integer

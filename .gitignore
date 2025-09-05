@@ -110,6 +110,7 @@ GameBuild/
 
 # UE5 crash dumps and logs
 *.dmp
+*.dump
 CrashReportClient/
 AutoScreenshot.png
 

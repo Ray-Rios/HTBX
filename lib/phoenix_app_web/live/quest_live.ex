@@ -1,6 +1,6 @@
 defmodule PhoenixAppWeb.QuestLive do
   use PhoenixAppWeb, :live_view
-  alias PhoenixApp.Accounts
+  # Accounts alias removed - not used
   alias Phoenix.PubSub
 
   on_mount {PhoenixAppWeb.Auth, :maybe_authenticated}

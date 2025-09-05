@@ -16,6 +16,12 @@ defmodule PhoenixAppWeb.Router do
     plug :fetch_session
   end
 
+  # Health check endpoint (no authentication required)
+  scope "/", PhoenixAppWeb do
+    pipe_through :api
+    get "/health", HealthController, :check
+  end
+
   pipeline :game_auth do
     plug PhoenixAppWeb.Plugs.GameAuthPlug
   end
@@ -24,9 +30,9 @@ defmodule PhoenixAppWeb.Router do
   # Public LiveViews
   # --------------------
   scope "/", PhoenixAppWeb do
-  pipe_through :browser
+    pipe_through :browser
 
-  live_session :browser,
+    live_session :browser,
     on_mount: {PhoenixAppWeb.UserAuth, :default},
     session: %{},
     layout: {PhoenixAppWeb.Layouts, :app} do
@@ -111,11 +117,16 @@ defmodule PhoenixAppWeb.Router do
 
 
   scope "/eqemu", PhoenixAppWeb do
-    pipe_through [:browser, :require_authenticated_user]
+    pipe_through :browser
+
+    live_session :eqemu_authenticated,
+      on_mount: {PhoenixAppWeb.UserAuth, :require_authenticated_user},
+      layout: {PhoenixAppWeb.Layouts, :app} do
   
-    live "/admin", EqemuAdminLive, :index
-    live "/player", EqemuPlayerLive, :index
-    live "/server", EqemuServerLive, :index
+      live "/admin", EqemuAdminLive, :index
+      live "/player", EqemuPlayerLive, :index
+      live "/server", EqemuServerLive, :index
+    end
   end
 
 

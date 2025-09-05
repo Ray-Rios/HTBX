@@ -1,7 +1,6 @@
 defmodule PhoenixAppWeb.GameAdminLive do
   use PhoenixAppWeb, :live_view
-  alias PhoenixApp.{Accounts, GameCMS}
-  alias PhoenixApp.GameCMS.{Character, Item, Quest, Guild}
+  # Note: GameCMS removed - using basic game functionality only
 
   on_mount {PhoenixAppWeb.UserAuth, :require_admin_user}
 
@@ -438,12 +437,12 @@ defmodule PhoenixAppWeb.GameAdminLive do
     ]
   end
 
-  defp restart_game_server(server_id) do
+  defp restart_game_server(_server_id) do
     # Implement actual server restart logic
     :ok
   end
 
-  defp kick_player(player_id) do
+  defp kick_player(_player_id) do
     # Implement actual player kick logic
     :ok
   end

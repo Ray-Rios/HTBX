@@ -76,7 +76,7 @@ Admin ──► /admin/game-cms ──► Create/Edit Game Data ──► Databa
 
 ## 🎮 Updated Pixel Streaming Client
 
-The pixel streaming client (`rust_game/pixel-streaming-web/game-ui.html`) now includes:
+The pixel streaming client (`eqemu/pixel-streaming-web/game-ui.html`) now includes:
 
 ### New Features
 - **Game CMS Button**: Direct access to admin panel

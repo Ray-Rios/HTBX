@@ -394,7 +394,7 @@ defmodule PhoenixApp.GameServers do
     # Start pixel streaming server that connects to the VNC
     spawn_link(fn ->
       System.cmd("node", [
-        "rust_game/pixel-streaming-server.js",
+        "eqemu/pixel-streaming-server.js",
         "--vnc-host", "localhost",
         "--vnc-port", "5900",
         "--stream-port", "8080"

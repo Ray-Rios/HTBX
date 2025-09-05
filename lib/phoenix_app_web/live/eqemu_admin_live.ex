@@ -1,4 +1,3 @@
-```elixir
 # lib/phoenix_app_web/live/eqemu_admin_live.ex
 defmodule PhoenixAppWeb.EqemuAdminLive do
   use PhoenixAppWeb, :live_view
@@ -69,7 +68,7 @@ defmodule PhoenixAppWeb.EqemuAdminLive do
         {:noreply, assign(socket, characters: characters) 
          |> put_flash(:info, "Character '#{character.name}' created successfully")}
       
-      {:error, changeset} ->
+      {:error, _changeset} ->
         {:noreply, put_flash(socket, :error, "Failed to create character")}
     end
   end
@@ -85,7 +84,7 @@ defmodule PhoenixAppWeb.EqemuAdminLive do
           selected_character: updated_character
         ) |> put_flash(:info, "Character updated successfully")}
       
-      {:error, changeset} ->
+      {:error, _changeset} ->
         {:noreply, put_flash(socket, :error, "Failed to update character")}
     end
   end
@@ -490,4 +489,3 @@ defmodule PhoenixAppWeb.EqemuAdminLive do
     end
   end
 end
-```

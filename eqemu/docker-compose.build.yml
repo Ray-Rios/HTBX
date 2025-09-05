@@ -12,7 +12,7 @@ services:
       - ue5_build_cache:/tmp/ue5_cache
       - ue5_engine:/opt/ue5
     environment:
-      - PROJECT_NAME=ActionRPGMultiplayerStart
+      - PROJECT_NAME=Eqemuue5
       - BUILD_PLATFORM=Win64
       - BUILD_CONFIG=Shipping
       - OUTPUT_DIR=/project/Packaged

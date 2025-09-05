@@ -898,46 +898,46 @@ defmodule PhoenixAppWeb.GameCmsAdminLive do
         
         <h4>Get All Characters</h4>
         <div class="code-block">
-query {
-  characters {
-    id
-    name
-    class
-    level
-    gold
-    currentZone
-    user_id
-  }
-}
+          query {
+            characters {
+              id
+              name
+              class
+              level
+              gold
+              currentZone
+              user_id
+            }
+          }
         </div>
 
         <h4>Get All Items</h4>
         <div class="code-block">
-query {
-  items {
-    id
-    name
-    itemType
-    rarity
-    levelRequirement
-    price
-    attackPower
-    defense
-  }
-}
+          query {
+            items {
+              id
+              name
+              itemType
+              rarity
+              levelRequirement
+              price
+              attackPower
+              defense
+            }
+          }
         </div>
 
         <h4>Get Game Statistics</h4>
         <div class="code-block">
-query {
-  gameStats {
-    totalCharacters
-    totalItems
-    totalQuests
-    totalGuilds
-    activePlayers
-  }
-}
+          query {
+            gameStats {
+              totalCharacters
+              totalItems
+              totalQuests
+              totalGuilds
+              activePlayers
+            }
+          }
         </div>
       </div>
 
@@ -946,52 +946,52 @@ query {
         
         <h4>Create Character</h4>
         <div class="code-block">
-mutation {
-  createCharacter(input: {
-    name: "TestHero"
-    class: "Warrior"
-    userId: 1
-  }) {
-    id
-    name
-    class
-    level
-  }
-}
+          mutation {
+            createCharacter(input: {
+              name: "TestHero"
+              class: "Warrior"
+              userId: 1
+            }) {
+              id
+              name
+              class
+              level
+            }
+          }
         </div>
 
         <h4>Create Item</h4>
         <div class="code-block">
-mutation {
-  createItem(input: {
-    name: "Magic Sword"
-    itemType: "weapon"
-    rarity: "rare"
-    levelRequirement: 10
-    price: 500
-    attackPower: 25
-  }) {
-    id
-    name
-    rarity
-    attackPower
-  }
-}
+          mutation {
+            createItem(input: {
+              name: "Magic Sword"
+              itemType: "weapon"
+              rarity: "rare"
+              levelRequirement: 10
+              price: 500
+              attackPower: 25
+            }) {
+              id
+              name
+              rarity
+              attackPower
+            }
+          }
         </div>
 
         <h4>Send Chat Message</h4>
         <div class="code-block">
-mutation {
-  sendChatMessage(input: {
-    message: "Hello from GraphQL!"
-    channel: "global"
-  }) {
-    id
-    message
-    channel
-    insertedAt
-  }
-}
+          mutation {
+            sendChatMessage(input: {
+              message: "Hello from GraphQL!"
+              channel: "global"
+            }) {
+              id
+              message
+              channel
+              insertedAt
+            }
+          }
         </div>
       </div>
 
