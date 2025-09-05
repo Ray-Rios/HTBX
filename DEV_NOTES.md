@@ -51,7 +51,7 @@ Get-Process | Where-Object {$_.ProcessName -like "*beam*" -or $_.ProcessName -li
 
 prune your docker
 docker system prune -a -f
-
+docker volume prune -a -f
 
 # Restart just the pixel streaming service
 docker-compose restart pixel_streaming
@@ -65,12 +65,8 @@ docker-compose ps pixel_streaming
 # Check the logs
 docker-compose logs pixel_streaming
 
-# Test the API endpoint directly
-curl http://localhost:9070/api/players
-curl http://localhost:9070/status
 
-
-# Fix your Repo
+# Fix your github Repo
 mv -v .git .git_old &&            # Remove old Git files
 git init &&                       # Initialise new repository
 git remote add origin "${url}" && # Link to old repository
@@ -80,99 +76,20 @@ git reset origin/main --mixed     # Force update to old history.
 This leaves your working tree intact, and only affects Git's bookkeeping.
 
 
-
+## REDIS ##
 docker exec projekt-redis-1 redis-cli MONITOR
-
 # Check specific data types
 docker exec projekt-redis-1 redis-cli KEYS "player:*"
 docker exec projekt-redis-1 redis-cli KEYS "session:*"
 docker exec projekt-redis-1 redis-cli KEYS "leaderboard:*"
 
-
-
-Visit: http://localhost:9070
-
-You should now see:
-
-Interactive game canvas with animated characters
-Real-time UI (health/mana bars, player stats)
-Minimap showing player positions
-Chat system with game events
-Responsive controls (click to interact)
-🚀 Next Steps for Real UE5:
-To replace the mock with a real UE5 game:
-
-📡 API Endpoints:
-GraphQL: http://localhost:4000/api/graphql
-GraphiQL: http://localhost:4000/api/graphiql (dev only)
-Admin Panel: http://localhost:4000/game/cms
- /game/cms
-
-Phoenix stuff
+## Phoenix stuff ##
 mix deps.get
 mix compile
-
-
-Example Migrations
-# Users table
-mix ecto.gen.migration create_users
-# Posts table
-mix ecto.gen.migration create_posts
-# Comments table
-mix ecto.gen.migration create_comments
-
-#create_users (migration)
-defmodule PhoenixApp.Repo.Migrations.CreateUsers do
-  use Ecto.Migration
-
-  def change do
-    create table(:users) do
-      add :email, :string, null: false
-      add :hashed_password, :string, null: false
-      add :role, :string, default: "user"
-      timestamps()
-    end
-
-    create unique_index(:users, [:email])
-  end
-end
-
-#create_posts (migration)
-defmodule PhoenixApp.Repo.Migrations.CreatePosts do
-  use Ecto.Migration
-
-  def change do
-    create table(:posts) do
-      add :user_id, references(:users), null: false
-      add :title, :string, null: false
-      add :body, :text
-      timestamps()
-    end
-
-    create index(:posts, [:user_id])
-  end
-end
-
-# create_comments (migration)
-defmodule PhoenixApp.Repo.Migrations.CreateComments do
-  use Ecto.Migration
-
-  def change do
-    create table(:comments) do
-      add :post_id, references(:posts), null: false
-      add :user_id, references(:users), null: false
-      add :body, :text
-      timestamps()
-    end
-
-    create index(:comments, [:post_id])
-    create index(:comments, [:user_id])
-  end
-end
-
 mix ecto.create
 mix ecto.migrate
 
+## CockroachDB ##
 cockroach start-single-node --insecure --listen-addr=0.0.0.0 --http-addr=0.0.0.0 --store=/cockroach/cockroach-data
 
 Open UE5 and load your project
@@ -184,7 +101,18 @@ Choose output directory: C:\PROJEKT\eqemu\Packaged
 The container will automatically pick up the packaged game
 🌐 Quick Test Links:
 Pixel Streaming: http://localhost:9070
-Game Service: http://localhost:9069
+eqemuue5: http://localhost:7000
 Phoenix App: http://localhost:4000
 Services Status: http://localhost:4000/admin/services
 Streaming Status: http://localhost:9070/status
+View cockroach database admin at http://localhost:8081
+Test mailhog emails at http://localhost:8025
+
+📡 API Endpoints:
+GraphQL: http://localhost:4000/api/graphql
+GraphiQL: http://localhost:4000/api/graphiql (dev only)
+Admin Panel: http://localhost:4000/game/cms
+ /game/cms
+# Test the API endpoint directly
+curl http://localhost:9070/api/players
+curl http://localhost:9070/status

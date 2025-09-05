@@ -108,7 +108,7 @@ defmodule PhoenixAppWeb.CMS.BlogLive do
     """
   end
 
-  def render(%{current_post: post} = assigns) do
+  def render(%{current_post: _post} = assigns) do
     ~H"""
     <.flash_group flash={@flash} />
     <div class="min-h-screen bg-gray-50">

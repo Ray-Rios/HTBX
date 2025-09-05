@@ -193,7 +193,7 @@ defmodule PhoenixAppWeb.Resolvers.EqemuResolver do
           Absinthe.Subscription.publish(
             PhoenixAppWeb.Endpoint,
             updated_character,
-            eqemu_character_updated: "eqemu_character:#{updated_character.id}"
+            eqemu_character_updated: %{eqemu_character: "#{updated_character.id}"}
           )
           
           {:ok, updated_character}

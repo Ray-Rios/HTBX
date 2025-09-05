@@ -3,7 +3,7 @@ defmodule PhoenixAppWeb.HealthController do
 
   def check(conn, _params) do
     # Basic health check - you can add more sophisticated checks here
-    health_status = %{
+    base_status = %{
       status: "ok",
       timestamp: DateTime.utc_now() |> DateTime.to_iso8601(),
       service: "phoenix_app",
@@ -11,12 +11,12 @@ defmodule PhoenixAppWeb.HealthController do
     }
 
     # Optional: Add database connectivity check
-    try do
+    health_status = try do
       PhoenixApp.Repo.query!("SELECT 1")
-      health_status = Map.put(health_status, :database, "connected")
+      Map.put(base_status, :database, "connected")
     rescue
       _ ->
-        health_status = Map.put(health_status, :database, "disconnected")
+        Map.put(base_status, :database, "disconnected")
     end
 
     conn

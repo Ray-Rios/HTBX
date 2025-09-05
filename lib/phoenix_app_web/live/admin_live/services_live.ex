@@ -39,9 +39,9 @@ defmodule PhoenixAppWeb.AdminLive.ServicesLive do
       %{
         name: "Game Server (Rust)",
         description: "Eqemuue5 backend",
-        url: "http://localhost:9069",
-        port: 9069,
-        status: check_service_status("localhost", 9069),
+        url: "http://localhost:7000",
+        port: 7000,
+        status: check_service_status("localhost", 7000),
         type: :game
       },
       %{

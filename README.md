@@ -1,12 +1,12 @@
 Localhost dev only atm
 
 Access the web application at http://localhost:4000
-Use the game service API at http://localhost:9069
+Use the game service API at http://localhost:7000
 View database admin at http://localhost:8081
 Test emails at http://localhost:8025
 
 
-🎮 UE5 Desktop Game ←→ 🦀 Rust Server (9069) ←→ 🗄️ Database
+🎮 UE5 Desktop Game ←→ 🦀 Rust Server (7000) ←→ 🗄️ Database
                               ↕
                     🌐 Phoenix Dashboard (4000) ←→ 📦 Redis
 

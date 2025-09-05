@@ -1,5 +1,5 @@
 # Build stage
-FROM rust:1.82-slim as builder
+FROM rust:trixie
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -45,9 +45,7 @@ RUN useradd -m -u 1000 app
 
 WORKDIR /app
 
-# Copy binary and migrations
-COPY --from=builder /app/target/release/eqemu_service /app/eqemu_service
-COPY --from=builder /app/migrations ./migrations
+
 
 # Set ownership
 RUN chown -R app:app /app

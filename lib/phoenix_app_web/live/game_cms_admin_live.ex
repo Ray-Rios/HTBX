@@ -1,7 +1,7 @@
 defmodule PhoenixAppWeb.GameCmsAdminLive do
   use PhoenixAppWeb, :live_view
   alias PhoenixApp.{Accounts, GameCMS}
-  alias PhoenixApp.GameCMS.{Character, Item, Quest, Guild}
+
 
   @impl true
   def mount(_params, session, socket) do
@@ -999,9 +999,9 @@ defmodule PhoenixAppWeb.GameCmsAdminLive do
         <h3>🔐 Authentication</h3>
         <p>To use authenticated mutations, include the user token in your request headers:</p>
         <div class="code-block">
-{
-  "Authorization": "Bearer YOUR_USER_TOKEN"
-}
+          {
+            "Authorization": "Bearer YOUR_USER_TOKEN"
+          }
         </div>
       </div>
     </div>

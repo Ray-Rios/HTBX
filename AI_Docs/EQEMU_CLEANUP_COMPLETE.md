@@ -60,7 +60,7 @@ docker-compose up --build
 # Services will be available at:
 # - Phoenix Web: http://localhost:4000
 # - EQEmu Pixel Streaming: http://localhost:9070
-# - Game Service API: http://localhost:9069
+# - Game Service API: http://localhost:7000
 # - Database Admin: http://localhost:8081
 ```
 
@@ -120,7 +120,7 @@ When no UE5 game is packaged, the system runs in development mode:
 docker-compose ps
 
 # Test game service API
-curl http://localhost:9069/health
+curl http://localhost:7000/health
 
 # Test pixel streaming
 curl http://localhost:9070

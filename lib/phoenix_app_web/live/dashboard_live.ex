@@ -1,6 +1,6 @@
 defmodule PhoenixAppWeb.DashboardLive do
   use PhoenixAppWeb, :live_view
-  import Phoenix.HTML.Tag, only: [csrf_token_value: 0]
+
   import PhoenixAppWeb.Components.Navigation
   
   on_mount {PhoenixAppWeb.Auth, :maybe_authenticated}

@@ -130,7 +130,7 @@ defmodule PhoenixAppWeb.Api.GameAuthController do
         |> put_status(:unauthorized)
         |> json(%{success: false, error: "Invalid password"})
 
-      {:error, reason} ->
+      {:error, _reason} ->
         conn
         |> put_status(:unauthorized)
         |> json(%{success: false, error: "Authentication failed"})
@@ -179,7 +179,7 @@ defmodule PhoenixAppWeb.Api.GameAuthController do
           }
         })
 
-      {:error, reason} ->
+      {:error, _reason} ->
         conn
         |> put_status(:unauthorized)
         |> json(%{success: false, error: "Invalid or expired token"})
