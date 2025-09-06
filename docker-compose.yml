@@ -1,5 +1,5 @@
 services:
-  # CockroachDB
+  # CockroachDB!!
   db:
     image: cockroachdb/cockroach:v25.2.5
     command: start-single-node --insecure
@@ -19,7 +19,7 @@ services:
     volumes:
       - redis_data:/data
 
-  # Phoenix Web Service WordPress Wannabe
+  # Phoenix!!
   web:
     build:
       context: .
@@ -40,7 +40,7 @@ services:
     command: /usr/local/bin/start.sh
     restart: unless-stopped
 
-  # Fake Email Service
+  # Fake Email Service!!
   mailhog:
     image: mailhog/mailhog:latest
     ports:

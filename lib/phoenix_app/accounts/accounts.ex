@@ -19,18 +19,45 @@ defmodule PhoenixApp.Accounts do
   # Register a new user
   # ---------------------
   def register_user(attrs) do
-    %User{}
-    |> User.registration_changeset(attrs)
-    |> Repo.insert()
+    Repo.transaction(fn ->
+      # Create the user
+      case %User{}
+           |> User.registration_changeset(attrs)
+           |> Repo.insert() do
+        {:ok, user} ->
+          # Create corresponding EQEmu account
+          case PhoenixApp.EqemuGame.create_eqemu_account(user) do
+            {:ok, _account} -> user
+            {:error, reason} -> 
+              Repo.rollback("Failed to create EQEmu account: #{inspect(reason)}")
+          end
+        
+        {:error, changeset} ->
+          Repo.rollback(changeset)
+      end
+    end)
   end
 
   # ---------------------
   # Update profile (name/email)
   # ---------------------
   def update_profile(%User{} = user, attrs) do
-    user
-    |> User.profile_changeset(attrs)
-    |> Repo.update()
+    Repo.transaction(fn ->
+      case user
+           |> User.profile_changeset(attrs)
+           |> Repo.update() do
+        {:ok, updated_user} ->
+          # Sync email changes to EQEmu account
+          case PhoenixApp.EqemuGame.sync_user_to_eqemu_account(updated_user) do
+            {:ok, _account} -> updated_user
+            {:error, reason} ->
+              Repo.rollback("Failed to sync EQEmu account: #{inspect(reason)}")
+          end
+        
+        {:error, changeset} ->
+          Repo.rollback(changeset)
+      end
+    end)
   end
 
   # ---------------------
@@ -203,6 +230,32 @@ defmodule PhoenixApp.Accounts do
   end
 
   # ---------------------
+  # Safe delete user with EQEmu cleanup
+  # ---------------------
+  def delete_user_with_eqemu_cleanup(%User{} = user) do
+    Repo.transaction(fn ->
+      # Get user's EQEmu data for logging
+      eqemu_account = PhoenixApp.EqemuGame.get_account_by_user(user)
+      characters = PhoenixApp.EqemuGame.list_user_characters(user)
+      
+      # Log what will be deleted
+      IO.puts("Deleting user #{user.email} with:")
+      IO.puts("- EQEmu account: #{eqemu_account && eqemu_account.name}")
+      IO.puts("- Characters: #{length(characters)} characters")
+      
+      # Delete user (cascades to EQEmu account and characters)
+      case Repo.delete(user) do
+        {:ok, deleted_user} ->
+          IO.puts("Successfully deleted user and all EQEmu data")
+          deleted_user
+        
+        {:error, changeset} ->
+          Repo.rollback(changeset)
+      end
+    end)
+  end
+
+  # ---------------------
   # API server authentication
   # ---------------------
   def authenticate_for_api_server(email, password) do
@@ -215,6 +268,23 @@ defmodule PhoenixApp.Accounts do
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  # ---------------------
+  # EQEmu server authentication
+  # ---------------------
+  def authenticate_for_eqemu(email, password) do
+    case PhoenixApp.EqemuGame.authenticate_eqemu_login(email, password) do
+      {:ok, %{user: user, account: account}} ->
+        {:ok, %{user: user, account: account}}
+      
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  def verify_eqemu_account(account_name) do
+    PhoenixApp.EqemuGame.verify_eqemu_account(account_name)
   end
 
   def generate_api_session_token(%User{} = user) do

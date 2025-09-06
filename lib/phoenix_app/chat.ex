@@ -41,7 +41,12 @@ defmodule PhoenixApp.Chat do
     # Set position to be last
     max_position = from(c in Channel, select: max(c.position)) |> Repo.one() || 0
     
-    attrs = Map.put(attrs, "position", max_position + 1)
+    # Ensure consistent key types - use string keys to match form params
+    attrs = 
+      attrs
+      |> Enum.map(fn {k, v} -> {to_string(k), v} end)
+      |> Map.new()
+      |> Map.put("position", max_position + 1)
     
     %Channel{}
     |> Channel.changeset(attrs)

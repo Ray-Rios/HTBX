@@ -40,8 +40,8 @@ defmodule PhoenixAppWeb.Router do
     live "/register", AuthLive, :register
 
     # Public blog/shop/chat/etc.
-    live "/blog", CMS.BlogLive, :index
-    live "/blog/:slug", CMS.BlogLive, :show
+    live "/blog", BlogLive, :index
+    live "/blog/:slug", BlogLive, :show
     live "/shop", ShopLive, :index
     live "/shop/category/:slug", ShopLive, :category
     live "/shop/product/:id", ShopLive, :product
@@ -74,9 +74,7 @@ defmodule PhoenixAppWeb.Router do
       live "/avatar", AvatarLive, :index
       live "/files", FilesLive, :index
       live "/files/upload", FilesLive, :upload
-      
-      # Game interfaces (require authentication)
-      live "/game", GamePlayerLive, :index
+
     end
   end
 
@@ -103,7 +101,7 @@ defmodule PhoenixAppWeb.Router do
       on_mount: {PhoenixAppWeb.UserAuth, :require_admin_user},
       layout: {PhoenixAppWeb.Layouts, :app} do
 
-      live "/", CMS.AdminLive, :index
+      live "/", AdminLive.BlogManagement, :index
       live "/user-management", UserManagementLive, :index
     end
   end
@@ -145,6 +143,18 @@ defmodule PhoenixAppWeb.Router do
 
     get "/status", Api.ApiController, :status
     post "/sessions", Api.ApiController, :create_session
+  end
+
+  # --------------------
+  # EQEmu Server API
+  # --------------------
+  scope "/api/eqemu", PhoenixAppWeb do
+    pipe_through :api
+
+    post "/authenticate", Api.EqemuController, :authenticate
+    post "/verify_account", Api.EqemuController, :verify_account
+    get "/characters/:user_id", Api.EqemuController, :list_characters
+    post "/characters", Api.EqemuController, :create_character
   end
 
   # --------------------

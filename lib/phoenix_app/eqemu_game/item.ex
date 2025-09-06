@@ -6,79 +6,60 @@ defmodule PhoenixApp.EqemuGame.Item do
   @foreign_key_type :binary_id
 
   schema "eqemu_items" do
-    field :item_id, :integer
+    # Core fields that match the migration
+    field :eqemu_id, :integer
     field :name, :string
     field :lore, :string
     field :idfile, :string
-    field :lorefile, :string
     field :nodrop, :integer, default: 0
     field :norent, :integer, default: 0
-    field :nodonate, :integer, default: 0
-    field :cantune, :integer, default: 0
-    field :noswap, :integer, default: 0
-    field :size, :integer, default: 0
-    field :weight, :integer, default: 0
-    field :item_type, :integer, default: 0
+    field :itemtype, :integer, default: 0  # Note: migration uses 'itemtype' not 'item_type'
     field :icon, :integer, default: 0
     field :price, :integer, default: 0
-    field :sellrate, :float, default: 1.0
-    field :favor, :integer, default: 0
-    field :guildfavor, :integer, default: 0
-    field :pointtype, :integer, default: 0
     field :bagtype, :integer, default: 0
     field :bagslots, :integer, default: 0
     field :bagsize, :integer, default: 0
     field :bagwr, :integer, default: 0
     field :book, :integer, default: 0
-    field :booktype, :integer, default: 0
     field :filename, :string
     field :banedmgrace, :integer, default: 0
     field :banedmgbody, :integer, default: 0
     field :banedmgamt, :integer, default: 0
     field :magic, :integer, default: 0
     field :casttime_, :integer, default: 0
-    field :reqlevel, :integer, default: 0
     field :bardtype, :integer, default: 0
     field :bardvalue, :integer, default: 0
     field :light, :integer, default: 0
     field :delay, :integer, default: 0
     field :elemdmgtype, :integer, default: 0
     field :elemdmgamt, :integer, default: 0
-    field :range_, :integer, default: 0
     field :damage, :integer, default: 0
     field :color, :integer, default: 0
-    field :prestige, :integer, default: 0
     field :classes, :integer, default: 0
     field :races, :integer, default: 0
     field :deity, :integer, default: 0
-    field :skillmodtype, :integer, default: 0
-    field :skillmodvalue, :integer, default: 0
-    field :banedmgraceamt, :integer, default: 0
-    field :banedmgbodyamt, :integer, default: 0
-    field :worntype, :integer, default: 0
     field :ac, :integer, default: 0
     field :accuracy, :integer, default: 0
-    field :aagi, :integer, default: 0
-    field :acha, :integer, default: 0
-    field :adex, :integer, default: 0
-    field :aint, :integer, default: 0
-    field :asta, :integer, default: 0
-    field :astr, :integer, default: 0
-    field :awis, :integer, default: 0
+    field :agi, :integer, default: 0  # Note: migration uses 'agi' not 'aagi'
+    field :cha, :integer, default: 0
+    field :dex, :integer, default: 0
+    field :int, :integer, default: 0
+    field :sta, :integer, default: 0
+    field :str, :integer, default: 0
+    field :wis, :integer, default: 0
     field :hp, :integer, default: 0
     field :mana, :integer, default: 0
     field :endur, :integer, default: 0
-    field :atk, :integer, default: 0
     field :cr, :integer, default: 0
     field :dr, :integer, default: 0
     field :fr, :integer, default: 0
     field :mr, :integer, default: 0
     field :pr, :integer, default: 0
-    field :svcorruption, :integer, default: 0
     field :haste, :integer, default: 0
     field :damageshield, :integer, default: 0
-
-    has_many :character_inventory, PhoenixApp.EqemuGame.CharacterInventory
+    # Add weight and reqlevel for admin interface
+    field :weight, :integer, default: 0
+    field :reqlevel, :integer, default: 0
 
     timestamps()
   end
@@ -87,25 +68,21 @@ defmodule PhoenixApp.EqemuGame.Item do
   def changeset(item, attrs) do
     item
     |> cast(attrs, [
-      :item_id, :name, :lore, :idfile, :lorefile, :nodrop, :norent, :nodonate,
-      :cantune, :noswap, :size, :weight, :item_type, :icon, :price, :sellrate,
-      :favor, :guildfavor, :pointtype, :bagtype, :bagslots, :bagsize, :bagwr,
-      :book, :booktype, :filename, :banedmgrace, :banedmgbody, :banedmgamt,
-      :magic, :casttime_, :reqlevel, :bardtype, :bardvalue, :light, :delay,
-      :elemdmgtype, :elemdmgamt, :range_, :damage, :color, :prestige, :classes,
-      :races, :deity, :skillmodtype, :skillmodvalue, :banedmgraceamt,
-      :banedmgbodyamt, :worntype, :ac, :accuracy, :aagi, :acha, :adex, :aint,
-      :asta, :astr, :awis, :hp, :mana, :endur, :atk, :cr, :dr, :fr, :mr, :pr,
-      :svcorruption, :haste, :damageshield
+      :eqemu_id, :name, :lore, :idfile, :nodrop, :norent, :itemtype, :icon, 
+      :price, :bagtype, :bagslots, :bagsize, :bagwr, :book, :filename, 
+      :banedmgrace, :banedmgbody, :banedmgamt, :magic, :casttime_, :bardtype, 
+      :bardvalue, :light, :delay, :elemdmgtype, :elemdmgamt, :damage, :color, 
+      :classes, :races, :deity, :ac, :accuracy, :agi, :cha, :dex, :int, :sta, 
+      :str, :wis, :hp, :mana, :endur, :cr, :dr, :fr, :mr, :pr, :haste, :damageshield,
+      :weight, :reqlevel
     ])
-    |> validate_required([:item_id, :name])
+    |> validate_required([:name])
     |> validate_length(:name, min: 1, max: 64)
-    |> validate_number(:item_id, greater_than: 0)
-    |> unique_constraint(:item_id)
+    |> unique_constraint(:eqemu_id)
   end
 
-  def item_type_name(%__MODULE__{item_type: item_type}) do
-    case item_type do
+  def item_type_name(%__MODULE__{itemtype: itemtype}) do
+    case itemtype do
       0 -> "1H Slashing"
       1 -> "2H Slashing"
       2 -> "1H Piercing"
@@ -179,16 +156,16 @@ defmodule PhoenixApp.EqemuGame.Item do
     end
   end
 
-  def is_weapon?(%__MODULE__{item_type: item_type}) do
-    item_type in [0, 1, 2, 3, 4, 5, 19, 33, 42, 45]
+  def is_weapon?(%__MODULE__{itemtype: itemtype}) do
+    itemtype in [0, 1, 2, 3, 4, 5, 19, 33, 42, 45]
   end
 
-  def is_armor?(%__MODULE__{item_type: item_type}) do
-    item_type in [8, 10]
+  def is_armor?(%__MODULE__{itemtype: itemtype}) do
+    itemtype in [8, 10]
   end
 
-  def is_jewelry?(%__MODULE__{item_type: item_type}) do
-    item_type == 27
+  def is_jewelry?(%__MODULE__{itemtype: itemtype}) do
+    itemtype == 27
   end
 
   def is_container?(%__MODULE__{bagslots: bagslots}) do
@@ -246,10 +223,10 @@ defmodule PhoenixApp.EqemuGame.Item do
   end
 
   def total_stats(%__MODULE__{} = item) do
-    item.astr + item.asta + item.acha + item.adex + item.aint + item.aagi + item.awis
+    item.str + item.sta + item.cha + item.dex + item.int + item.agi + item.wis
   end
 
   def total_resistances(%__MODULE__{} = item) do
-    item.mr + item.fr + item.cr + item.pr + item.dr + item.svcorruption
+    item.mr + item.fr + item.cr + item.dr + item.pr
   end
 end

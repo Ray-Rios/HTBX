@@ -7,19 +7,64 @@ defmodule PhoenixApp.EqemuGame do
   alias PhoenixApp.Repo
 
   alias PhoenixApp.EqemuGame.{
+    Account,
     Character,
     CharacterStats,
     Item
   }
+  alias PhoenixApp.Accounts.User
 
-  # Characters
+  # ===== ACCOUNTS =====
+  
+  def get_account_by_user(%User{} = user) do
+    Account
+    |> where([a], a.user_id == ^user.id)
+    |> Repo.one()
+  end
+
+  def get_account_by_name(name) when is_binary(name) do
+    Account
+    |> where([a], a.name == ^name)
+    |> Repo.one()
+  end
+
+  def create_eqemu_account(%User{} = user) do
+    next_eqemu_id = get_next_eqemu_account_id()
+    
+    %Account{}
+    |> Account.create_changeset(%{
+      user_id: user.id,
+      name: user.email,  # Key connection: EQEmu account name = user email
+      eqemu_id: next_eqemu_id,
+      status: if(user.is_admin, do: 100, else: 0),  # Admin gets GM status
+      expansion: 8  # Set to appropriate expansion
+    })
+    |> Repo.insert()
+  end
+
+  def get_or_create_eqemu_account(%User{} = user) do
+    case get_account_by_user(user) do
+      nil -> create_eqemu_account(user)
+      account -> {:ok, account}
+    end
+  end
+
+  defp get_next_eqemu_account_id do
+    case Repo.aggregate(Account, :max, :eqemu_id) do
+      nil -> 1
+      max_id -> max_id + 1
+    end
+  end
+
+  # ===== CHARACTERS =====
+  
   def list_characters do
     Character
     |> order_by([c], c.name)
     |> Repo.all()
   end
 
-  def list_user_characters(user) do
+  def list_user_characters(%User{} = user) do
     Character
     |> where([c], c.user_id == ^user.id)
     |> order_by([c], c.name)
@@ -35,10 +80,35 @@ defmodule PhoenixApp.EqemuGame do
     |> Repo.one()
   end
 
-  def create_character(attrs \\ %{}) do
+  def create_character(%User{} = user, attrs) do
+    # Ensure user has an EQEmu account
+    {:ok, eqemu_account} = get_or_create_eqemu_account(user)
+    
+    next_eqemu_id = get_next_character_id()
+    
+    character_attrs = Map.merge(attrs, %{
+      user_id: user.id,
+      account_id: eqemu_account.eqemu_id,
+      eqemu_id: next_eqemu_id
+    })
+
+    %Character{}
+    |> Character.changeset(character_attrs)
+    |> Repo.insert()
+  end
+
+  def create_character(attrs) when is_map(attrs) do
+    # Legacy function for backward compatibility
     %Character{}
     |> Character.changeset(attrs)
     |> Repo.insert()
+  end
+
+  defp get_next_character_id do
+    case Repo.aggregate(Character, :max, :eqemu_id) do
+      nil -> 1
+      max_id -> max_id + 1
+    end
   end
 
   def update_character(%Character{} = character, attrs) do
@@ -124,8 +194,47 @@ defmodule PhoenixApp.EqemuGame do
   def list_tasks(_opts \\ []), do: []
   def get_character_quests(_character_id), do: []
 
+  # ===== EQEMU AUTHENTICATION =====
+  
+  def authenticate_eqemu_login(email, password) when is_binary(email) and is_binary(password) do
+    with %User{} = user <- Repo.get_by(User, email: email),
+         true <- User.valid_password?(user, password),
+         {:ok, account} <- get_or_create_eqemu_account(user) do
+      {:ok, %{user: user, account: account}}
+    else
+      nil -> {:error, :invalid_email}
+      false -> {:error, :invalid_password}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  def verify_eqemu_account(account_name) when is_binary(account_name) do
+    case get_account_by_name(account_name) do
+      nil -> {:error, :account_not_found}
+      account -> 
+        account = Repo.preload(account, :user)
+        {:ok, account}
+    end
+  end
+
+  def sync_user_to_eqemu_account(%User{} = user) do
+    case get_account_by_user(user) do
+      nil -> 
+        create_eqemu_account(user)
+      
+      account ->
+        # Update existing account if email changed
+        if account.name != user.email do
+          account
+          |> Account.changeset(%{name: user.email})
+          |> Repo.update()
+        else
+          {:ok, account}
+        end
+    end
+  end
+
   # Missing functions referenced in resolver - placeholder implementations
-  def create_character(_user, attrs), do: create_character(attrs)
   def search_characters(_query), do: list_characters()
   def search_items(_query), do: list_items()
   def search_zones(_query), do: list_zones()

@@ -153,7 +153,7 @@ defmodule PhoenixAppWeb.Schema.EqemuTypes do
     field :leader, :integer
     field :moto_of_the_day, :string
     field :url, :string
-    field :tribute, :integer
+    field :dkp, :integer
 
     field :members, list_of(:eqemu_guild_member), resolve: dataloader(PhoenixApp.EqemuGame)
   end
@@ -163,7 +163,7 @@ defmodule PhoenixAppWeb.Schema.EqemuTypes do
     field :guild_id, non_null(:id)
     field :character_id, non_null(:id)
     field :rank_, :integer
-    field :tribute_enable, :integer
+    field :dkp_enable, :integer
     field :public_note, :string
     field :officer_note, :string
 

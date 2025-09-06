@@ -10,25 +10,37 @@ defmodule PhoenixApp.Content.Post do
     field :slug, :string
     field :content, :string
     field :excerpt, :string
-    field :is_published, :boolean, default: false
+    field :status, Ecto.Enum, values: [:published, :draft, :private, :trash], default: :draft
+    field :post_type, :string, default: "post"
     field :published_at, :utc_datetime
     field :featured_image, PhoenixApp.PostImage.Type
     field :meta_description, :string
     field :tags, {:array, :string}, default: []
+    field :comment_status, Ecto.Enum, values: [:open, :closed], default: :open
+    field :menu_order, :integer, default: 0
+    field :comment_count, :integer, default: 0
 
     belongs_to :user, PhoenixApp.Accounts.User
+    belongs_to :parent, __MODULE__, foreign_key: :parent_id
+    has_many :children, __MODULE__, foreign_key: :parent_id
+    has_many :comments, PhoenixApp.Content.Comment, foreign_key: :post_id
 
     timestamps(type: :utc_datetime)
   end
 
   def changeset(post, attrs) do
     post
-    |> cast(attrs, [:title, :slug, :content, :excerpt, :is_published, :published_at, :meta_description, :tags])
+    |> cast(attrs, [
+      :title, :slug, :content, :excerpt, :status, :post_type, :published_at, 
+      :meta_description, :tags, :comment_status, :menu_order, :comment_count, :parent_id
+    ])
     |> cast_attachments(attrs, [:featured_image])
     |> validate_required([:title, :content])
     |> validate_length(:title, min: 1, max: 200)
     |> validate_length(:excerpt, max: 500)
     |> validate_length(:meta_description, max: 160)
+    |> validate_inclusion(:status, [:published, :draft, :private, :trash])
+    |> validate_inclusion(:comment_status, [:open, :closed])
     |> maybe_generate_slug()
     |> maybe_set_published_at()
     |> unique_constraint(:slug)
@@ -53,16 +65,21 @@ defmodule PhoenixApp.Content.Post do
   end
 
   defp maybe_set_published_at(changeset) do
-    is_published = get_change(changeset, :is_published)
+    status = get_change(changeset, :status)
     current_published_at = get_field(changeset, :published_at)
     
     cond do
-      is_published == true and is_nil(current_published_at) ->
+      status == :published and is_nil(current_published_at) ->
         put_change(changeset, :published_at, DateTime.utc_now())
-      is_published == false ->
+      status != :published ->
         put_change(changeset, :published_at, nil)
       true ->
         changeset
     end
   end
+
+  # Helper functions for CMS compatibility
+  def published?(post), do: post.status == :published
+  def draft?(post), do: post.status == :draft
+  def can_comment?(post), do: post.comment_status == :open
 end
