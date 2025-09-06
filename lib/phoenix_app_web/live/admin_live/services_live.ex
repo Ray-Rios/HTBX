@@ -37,12 +37,12 @@ defmodule PhoenixAppWeb.AdminLive.ServicesLive do
         type: :web
       },
       %{
-        name: "Game Server (Rust)",
-        description: "Eqemuue5 backend",
+        name: "API Server (Rust)",
+        description: "Universal API backend for web and games",
         url: "http://localhost:7000",
         port: 7000,
         status: check_service_status("localhost", 7000),
-        type: :game
+        type: :api
       },
       %{
         name: "Pixel Streaming",
@@ -191,12 +191,12 @@ defmodule PhoenixAppWeb.AdminLive.ServicesLive do
   defp status_text(_), do: "Unknown"
 
   defp service_icon_bg(:web), do: "bg-blue-500"
-  defp service_icon_bg(:game), do: "bg-green-500"
+  defp service_icon_bg(:api), do: "bg-green-500"
   defp service_icon_bg(:streaming), do: "bg-purple-500"
   defp service_icon_bg(:database), do: "bg-orange-500"
 
   defp service_icon_text(:web), do: "🌐"
-  defp service_icon_text(:game), do: "🎮"
+  defp service_icon_text(:api), do: "🔌"
   defp service_icon_text(:streaming), do: "📺"
   defp service_icon_text(:database), do: "🗄️"
 end

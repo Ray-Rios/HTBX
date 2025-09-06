@@ -16,11 +16,6 @@ defmodule PhoenixAppWeb.Router do
     plug :fetch_session
   end
 
-  # Health check endpoint (no authentication required)
-  scope "/", PhoenixAppWeb do
-    pipe_through :api
-    get "/health", HealthController, :check
-  end
 
   pipeline :game_auth do
     plug PhoenixAppWeb.Plugs.GameAuthPlug
@@ -109,12 +104,9 @@ defmodule PhoenixAppWeb.Router do
       layout: {PhoenixAppWeb.Layouts, :app} do
 
       live "/", CMS.AdminLive, :index
-      live "/game", GameAdminLive, :index
-      live "/game-cms", GameCmsAdminLive, :index
       live "/user-management", UserManagementLive, :index
     end
   end
-
 
   scope "/eqemu", PhoenixAppWeb do
     pipe_through :browser
@@ -129,54 +121,30 @@ defmodule PhoenixAppWeb.Router do
     end
   end
 
-
   # --------------------
-  # Game API
+  # GraphQL API Authentication
   # --------------------
-  scope "/api/game", PhoenixAppWeb do
+  scope "/api/auth", PhoenixAppWeb do
     pipe_through :api
 
-    # Public game endpoints
-    post "/register", Api.GameAuthController, :register
-    post "/login", Api.GameAuthController, :login
-    post "/auth", Api.GameAuthController, :authenticate
-    post "/verify", Api.GameAuthController, :verify_token
-    get "/leaderboard", Api.GameController, :leaderboard
-    get "/stats", Api.GameController, :stats
-
-    # Protected game routes (require authentication)
-    pipe_through :game_auth
-
-    # Player profile and stats
-    get "/profile", Api.GameController, :profile
-    
-    # Game sessions
-    post "/session/start", Api.GameController, :start_session
-    put "/session/:id/update", Api.GameController, :update_session
-    post "/session/:id/heartbeat", Api.GameController, :heartbeat
-    
-    # Game events
-    post "/event", Api.GameController, :create_event
+    # Public auth endpoints
+    post "/register", Api.ApiAuthController, :register
+    post "/login", Api.ApiAuthController, :login
+    post "/authenticate", Api.ApiAuthController, :authenticate
+    post "/verify", Api.ApiAuthController, :verify_token
     
     # Admin-only endpoints
-    get "/users", Api.GameAuthController, :list_users
+    get "/users", Api.ApiAuthController, :list_users
   end
 
   # --------------------
-  # Pixel Streaming API
+  # API (Rust API Migration)
   # --------------------
-  scope "/api/pixel-streaming", PhoenixAppWeb do
+  scope "/api", PhoenixAppWeb do
     pipe_through :api
 
-    # Public endpoints for pixel streaming service
-    get "/status", Api.PixelStreamingController, :status
-    get "/players", Api.PixelStreamingController, :players
-    get "/game-data", Api.PixelStreamingController, :game_data
-    
-    # Admin endpoints (should be protected in production)
-    get "/admin/stats", Api.PixelStreamingController, :admin_stats
-    post "/admin/broadcast", Api.PixelStreamingController, :broadcast_message
-    post "/admin/kick/:player_id", Api.PixelStreamingController, :kick_player
+    get "/status", Api.ApiController, :status
+    post "/sessions", Api.ApiController, :create_session
   end
 
   # --------------------

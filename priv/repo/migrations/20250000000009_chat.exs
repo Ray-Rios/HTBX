@@ -12,7 +12,7 @@ defmodule PhoenixApp.Repo.Migrations.CreateChatTables do
       add :channel_type, :string, default: "text"
       add :is_private, :boolean, default: false
       add :created_by_id, references(:users, type: :binary_id, on_delete: :nilify_all)
-
+      add :position, :integer, default: 0
       timestamps(type: :utc_datetime)
     end
 
@@ -30,10 +30,13 @@ defmodule PhoenixApp.Repo.Migrations.CreateChatTables do
       add :user_id, references(:users, type: :binary_id, on_delete: :delete_all), null: false
       add :channel_id, references(:chat_channels, type: :binary_id, on_delete: :delete_all), null: false
       add :reply_to_id, references(:chat_messages, type: :binary_id, on_delete: :nilify_all)
+      add :thread_id, references(:chat_threads, type: :binary_id, on_delete: :nilify_all)
 
       timestamps(type: :utc_datetime)
     end
-
+    
+    create index(:chat_messages, [:thread_id])
+    create index(:chat_channels, [:position])
     create index(:chat_messages, [:channel_id])
     create index(:chat_messages, [:user_id])
     create index(:chat_messages, [:message_type])

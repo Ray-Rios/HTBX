@@ -22,19 +22,6 @@ struct ApiResponse<T> {
 
 async fn handle_request(req: Request<Body>) -> Result<Response<Body>, Infallible> {
     let response = match (req.method(), req.uri().path()) {
-        (&Method::GET, "/health") => {
-            let response = ApiResponse {
-                success: true,
-                data: Some("EQEmu service is running"),
-                message: "Health check passed".to_string(),
-            };
-            Response::builder()
-                .status(StatusCode::OK)
-                .header("content-type", "application/json")
-                .body(Body::from(serde_json::to_string(&response).unwrap()))
-                .unwrap()
-        }
-        
         (&Method::GET, "/api/status") => {
             let response = ApiResponse {
                 success: true,
@@ -93,7 +80,7 @@ async fn handle_request(req: Request<Body>) -> Result<Response<Body>, Infallible
 
 #[tokio::main]
 async fn main() {
-    let port = std::env::var("GAME_SERVICE_PORT")
+    let port = std::env::var("API_SERVICE_PORT")
         .unwrap_or_else(|_| "7000".to_string())
         .parse::<u16>()
         .unwrap_or(7000);
@@ -106,7 +93,6 @@ async fn main() {
     let server = Server::bind(&addr).serve(make_svc);
 
     println!("🎮 EQEmu Service running on http://{}", addr);
-    println!("📊 Health check: http://{}/health", addr);
     println!("🔍 Status API: http://{}/api/status", addr);
 
     if let Err(e) = server.await {

@@ -17,8 +17,8 @@ const config = {
     signalingPort: process.env.PIXEL_STREAMING_PORT || 8888,
     webPort: process.env.WEB_PORT || 9070,
     
-    // Game server configuration
-    gameServerUrl: process.env.GAME_SERVER_URL || 'http://localhost:7000',
+    // API server configuration
+    apiServerUrl: process.env.API_SERVER_URL || 'http://localhost:7000',
     
     // UE5 game executable path
     gameExecutable: process.env.GAME_EXECUTABLE || '/app/game/eqemuue5.sh',
@@ -197,8 +197,8 @@ async function startGameSession(session, data) {
         // Check if game executable exists
         if (!fs.existsSync(config.gameExecutable)) {
             console.log(`⚠️  Game executable not found: ${config.gameExecutable}`);
-            console.log(`🔧 Starting mock game server instead...`);
-            startMockGameServer(session);
+            console.log(`🔧 Starting mock API server instead...`);
+            startMockApiServer(session);
             return;
         }
         
@@ -268,9 +268,9 @@ async function startGameSession(session, data) {
     }
 }
 
-// Start a mock game server for development/testing
-function startMockGameServer(session) {
-    console.log(`🎭 Starting mock game server for ${session.id}`);
+// Start a mock API server for development/testing
+function startMockApiServer(session) {
+    console.log(`🎭 Starting mock API server for ${session.id}`);
     
     // Send mock game data
     session.ws.send(JSON.stringify({

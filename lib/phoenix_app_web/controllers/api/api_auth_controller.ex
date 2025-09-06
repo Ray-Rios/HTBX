@@ -1,8 +1,8 @@
-defmodule PhoenixAppWeb.Api.GameAuthController do
+defmodule PhoenixAppWeb.Api.ApiAuthController do
   use PhoenixAppWeb, :controller
   alias PhoenixApp.Accounts
 
-  # POST /api/game/register
+  # POST /api/auth/register
   def register(conn, %{"email" => email, "password" => password} = params) do
     user_params = %{
       "email" => email,
@@ -13,8 +13,8 @@ defmodule PhoenixAppWeb.Api.GameAuthController do
     case Accounts.register_user(user_params) do
       {:ok, user} ->
         # Auto-login after registration
-        case Accounts.authenticate_for_game_server(email, password) do
-          {:ok, %{user: user, game_token: token}} ->
+        case Accounts.authenticate_for_api_server(email, password) do
+          {:ok, %{user: user, api_token: token}} ->
             conn
             |> put_session(:user_id, user.id)
             |> put_status(:created)
@@ -27,7 +27,7 @@ defmodule PhoenixAppWeb.Api.GameAuthController do
                 name: user.name,
                 is_admin: user.is_admin
               },
-              game_token: token
+              api_token: token
             })
 
           {:error, _} ->
@@ -56,7 +56,7 @@ defmodule PhoenixAppWeb.Api.GameAuthController do
     end
   end
 
-  # POST /api/game/login
+  # POST /api/auth/login
   def login(conn, %{"email" => email, "password" => password}) do
     case Accounts.authenticate_user(email, password) do
       {:ok, user} ->
@@ -82,12 +82,12 @@ defmodule PhoenixAppWeb.Api.GameAuthController do
     end
   end
 
-  # POST /api/game/auth
+  # POST /api/auth/authenticate
   def authenticate(conn, %{"email" => email, "password" => password}) do
-    case Accounts.authenticate_for_game_server(email, password) do
-      {:ok, %{user: user, game_token: token}} ->
-        # Create game session on the game server
-        case create_game_session(user, token) do
+    case Accounts.authenticate_for_api_server(email, password) do
+      {:ok, %{user: user, api_token: token}} ->
+        # Create API session on the API server
+        case create_api_session(user, token) do
           {:ok, session_data} ->
             conn
             |> put_status(:ok)
@@ -99,12 +99,12 @@ defmodule PhoenixAppWeb.Api.GameAuthController do
                 name: user.name,
                 is_admin: user.is_admin
               },
-              game_token: token,
-              game_session: session_data
+              api_token: token,
+              api_session: session_data
             })
 
           {:error, _reason} ->
-            # Still return success for auth, but note game session creation failed
+            # Still return success for auth, but note API session creation failed
             conn
             |> put_status(:ok)
             |> json(%{
@@ -115,8 +115,8 @@ defmodule PhoenixAppWeb.Api.GameAuthController do
                 name: user.name,
                 is_admin: user.is_admin
               },
-              game_token: token,
-              game_session_error: "Could not create game session"
+              api_token: token,
+              api_session_error: "Could not create API session"
             })
         end
 
@@ -137,18 +137,18 @@ defmodule PhoenixAppWeb.Api.GameAuthController do
     end
   end
 
-  defp create_game_session(user, token) do
-    game_server_url = System.get_env("GAME_SERVER_URL", "http://localhost:7000")
+  defp create_api_session(user, token) do
+    api_server_url = System.get_env("API_SERVER_URL", "http://localhost:7000")
     
     payload = %{
       user_id: user.id,
       email: user.email,
       name: user.name,
-      game_token: token,
+      api_token: token,
       is_admin: user.is_admin
     }
 
-    case HTTPoison.post("#{game_server_url}/auth/create_session", Jason.encode!(payload), [{"Content-Type", "application/json"}]) do
+    case HTTPoison.post("#{api_server_url}/auth/create_session", Jason.encode!(payload), [{"Content-Type", "application/json"}]) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         case Jason.decode(body) do
           {:ok, session_data} -> {:ok, session_data}
@@ -156,14 +156,14 @@ defmodule PhoenixAppWeb.Api.GameAuthController do
         end
       
       {:ok, %HTTPoison.Response{status_code: _}} ->
-        {:error, :game_server_error}
+        {:error, :api_server_error}
       
       {:error, _} ->
         {:error, :connection_failed}
     end
   end
 
-  # POST /api/game/verify
+  # POST /api/auth/verify
   def verify_token(conn, %{"token" => token}) do
     case Accounts.verify_game_session_token(token) do
       {:ok, user} ->
@@ -186,9 +186,9 @@ defmodule PhoenixAppWeb.Api.GameAuthController do
     end
   end
 
-  # GET /api/game/users (for game server to get user list)
+  # GET /api/auth/users (for API server to get user list)
   def list_users(conn, _params) do
-    # This should be protected by game server authentication
+    # This should be protected by API server authentication
     users = Accounts.list_users()
     
     user_data = Enum.map(users, fn user ->

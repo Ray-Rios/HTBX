@@ -203,22 +203,22 @@ defmodule PhoenixApp.Accounts do
   end
 
   # ---------------------
-  # Game server authentication
+  # API server authentication
   # ---------------------
-  def authenticate_for_game_server(email, password) do
+  def authenticate_for_api_server(email, password) do
     case authenticate_user(email, password) do
       {:ok, user} ->
-        # Generate a game session token
-        game_token = generate_game_session_token(user)
-        {:ok, %{user: user, game_token: game_token}}
+        # Generate an API session token
+        api_token = generate_api_session_token(user)
+        {:ok, %{user: user, api_token: api_token}}
       
       {:error, reason} ->
         {:error, reason}
     end
   end
 
-  def generate_game_session_token(%User{} = user) do
-    # Create a JWT-like token for game server authentication
+  def generate_api_session_token(%User{} = user) do
+    # Create a JWT-like token for API server authentication
     payload = %{
       user_id: user.id,
       email: user.email,

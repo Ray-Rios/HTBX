@@ -7,7 +7,7 @@ defmodule PhoenixApp.Game do
   import Ecto.Query, warn: false
   alias PhoenixApp.Repo
   alias PhoenixApp.Accounts.User
-  alias PhoenixApp.Game.{GameSession, GameEvent, PlayerStats, WorldState}
+  alias PhoenixApp.Game.{GameSession, GameEvent, PlayerStats, WorldState, Session}
 
   # ---------------------
   # Game Sessions
@@ -229,5 +229,48 @@ defmodule PhoenixApp.Game do
       }
     )
     |> Repo.all()
+  end
+
+  # ---------------------
+  # API Sessions (for Rust API migration)
+  # ---------------------
+
+  @doc """
+  Creates a new API session for the Rust API migration.
+  """
+  def create_session(attrs \\ %{}) do
+    %Session{}
+    |> Session.create_changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Gets a session by ID.
+  """
+  def get_session(id) do
+    Repo.get(Session, id)
+  end
+
+  @doc """
+  Gets a session by ID, raising if not found.
+  """
+  def get_session!(id) do
+    Repo.get!(Session, id)
+  end
+
+  @doc """
+  Updates a session.
+  """
+  def update_session(%Session{} = session, attrs) do
+    session
+    |> Session.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a session.
+  """
+  def delete_session(%Session{} = session) do
+    Repo.delete(session)
   end
 end

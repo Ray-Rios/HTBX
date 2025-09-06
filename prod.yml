@@ -9,12 +9,6 @@ services:
       - "8081:8080"    # Admin UI
     volumes:
       - cockroach_data_prod:/cockroach/cockroach-data
-    healthcheck:
-      test: ["CMD-SHELL", "cockroach sql --insecure --host=localhost -e 'SELECT 1;'"]
-      interval: 10s
-      timeout: 10s
-      retries: 10
-      start_period: 30s
 
   redis:
     image: redis:latest
@@ -22,11 +16,6 @@ services:
       - "6379:6379"
     volumes:
       - redis_data_prod:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
 
   web:
     build:
@@ -41,10 +30,8 @@ services:
       - .:/app:rw
       - /app/priv/static/assets
     depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - db
+      - redis
     command: /usr/local/bin/start.sh
     volumes: []  # no bind mounts in prod
 

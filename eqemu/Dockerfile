@@ -54,4 +54,4 @@ USER app
 
 EXPOSE 7000
 
-CMD ["./eqemu_service"]
+#CMD ["./eqemu_service"]

@@ -1,7 +1,7 @@
 Localhost dev only atm
 
 Access the web application at http://localhost:4000
-Use the game service API at http://localhost:7000
+Use the API service at http://localhost:7000
 View database admin at http://localhost:8081
 Test emails at http://localhost:8025
 

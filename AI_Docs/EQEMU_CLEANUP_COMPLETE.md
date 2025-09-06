@@ -45,7 +45,6 @@ eqemu/
 - **Error Handling**: Graceful connection error recovery
 
 ### **Rust Service API**
-- **Health Checks**: `/health` endpoint for monitoring
 - **Status API**: `/api/status` for service information
 - **Session Management**: `/api/sessions` for game sessions
 - **JSON Responses**: Structured API responses

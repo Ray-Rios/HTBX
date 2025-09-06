@@ -1,4 +1,5 @@
 services:
+  # CockroachDB
   db:
     image: cockroachdb/cockroach:v25.2.5
     command: start-single-node --insecure
@@ -9,24 +10,14 @@ services:
       - "8081:8080"    # Admin UI
     volumes:
       - cockroach_data:/cockroach/cockroach-data
-    healthcheck:
-      test: ["CMD-SHELL", "cockroach sql --insecure --host=localhost -e 'SELECT 1;'"]
-      interval: 10s
-      timeout: 10s
-      retries: 10
-      start_period: 30s
 
+  # REDIS!!
   redis:
     image: redis:latest
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
 
   # Phoenix Web Service WordPress Wannabe
   web:
@@ -37,62 +28,19 @@ services:
         MIX_ENV: dev
     env_file:
       - .env
-    environment:
-      - GAME_SERVER_URL=http://eqemuue5:7000
     ports:
-      - "4000:4000"  # Phoenix web interface + CMS at /cms
+      - "4000:4000"  # Phoenix web interface
     depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      eqemuue5:
-        condition: service_healthy
+      - db
+      - redis
     volumes:
       - .:/app:rw
       - /app/deps
       - /app/_build
     command: /usr/local/bin/start.sh
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:4000/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
 
-  # Rust server
-  eqemuue5:
-    build:
-      context: ./eqemu
-      dockerfile: Dockerfile
-    env_file:
-      - .env
-    environment:
-      # Override specific environment variables for the game service
-      - RUST_LOG=info
-      - GAME_SERVICE_PORT=7000
-      - DATABASE_URL=postgresql://root@db:26257/phoenixapp_dev?sslmode=disable
-      - REDIS_URL=redis://redis:6379
-      - PHOENIX_SERVICE_URL=http://web:4000
-    ports:
-      - "7000:7000"  # Game API port
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:7000/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 45s
-
-
-
-
+  # Fake Email Service
   mailhog:
     image: mailhog/mailhog:latest
     ports:
@@ -102,4 +50,3 @@ services:
 volumes:
   cockroach_data:
   redis_data:
-  ue5_build_cache:

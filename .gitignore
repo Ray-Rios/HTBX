@@ -6,7 +6,8 @@ config/dev.secret.exs
 config/prod.secret.exs
 config/runtime.exs.backup
 eqemu/server/
-
+eqemu/eqemu_cpp_source_code/
+AI_Docs/
 # Database files
 *.db
 *.sql
@@ -103,10 +104,6 @@ UpgradeLog*.XML
 _UpgradeReport_Files/
 Backup*/
 BuildLogs/
-
-# UE5 packaged builds (keep source, ignore builds)
-Packaged/
-GameBuild/
 
 # UE5 crash dumps and logs
 *.dmp

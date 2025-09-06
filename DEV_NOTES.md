@@ -4,11 +4,7 @@ For prod, you must replace these with real secrets before deployment — otherwi
 Example:
 SECRET_KEY_BASE= $(mix phx.gen.secret 64)
 LIVE_VIEW_SIGNING_SALT= $(mix phx.gen.secret 32)
-
-// build the game auto magically!!
-docker-compose -f docker-compose.ue5.yml run --rm ue5_builder
-
-and then inserted into .env.prod.
+> and then inserted it into .env.prod.
 
 Recommended to run dev first and generate secrets in the web docker container
  > docker-compose web RUN mix phx.gen.secret
@@ -92,13 +88,6 @@ mix ecto.migrate
 ## CockroachDB ##
 cockroach start-single-node --insecure --listen-addr=0.0.0.0 --http-addr=0.0.0.0 --store=/cockroach/cockroach-data
 
-Open UE5 and load your project
-Enable Pixel Streaming Plugin:
-Edit → Plugins → Search "Pixel Streaming" → Enable
-Package for Linux:
-File → Package Project → Linux (x86_64)
-Choose output directory: C:\PROJEKT\eqemu\Packaged
-The container will automatically pick up the packaged game
 🌐 Quick Test Links:
 Pixel Streaming: http://localhost:9070
 eqemuue5: http://localhost:7000
@@ -111,8 +100,7 @@ Test mailhog emails at http://localhost:8025
 📡 API Endpoints:
 GraphQL: http://localhost:4000/api/graphql
 GraphiQL: http://localhost:4000/api/graphiql (dev only)
-Admin Panel: http://localhost:4000/game/cms
- /game/cms
+
 # Test the API endpoint directly
 curl http://localhost:9070/api/players
 curl http://localhost:9070/status
