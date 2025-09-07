@@ -49,32 +49,32 @@ echo "LIVE_VIEW_SIGNING_SALT: ${LIVE_VIEW_SIGNING_SALT:0:8}..."
 # ----------------------------
 # Wait for database
 # ----------------------------
-echo "Waiting for CockroachDB to be ready..."
-until pg_isready -h db -p 26257 -U root &> /dev/null; do
+echo "Waiting for PostgreSQL to be ready..."
+until pg_isready -h db -p 5432 -U postgres &> /dev/null; do
   echo "Waiting for database..."
   sleep 2
 done
-echo "CockroachDB is ready!"
+echo "PostgreSQL is ready!"
 
 # ----------------------------
 # Create database using Ecto
 # ----------------------------
-echo "Skipping database creation for debugging..."
- mix ecto.create --quiet || echo "Database already exists or creation failed, continuing..."
+echo "Creating database..."
+mix ecto.create --quiet || echo "Database already exists or creation failed, continuing..."
 
 # ----------------------------
 # Run Ecto migrations with retry
 # ----------------------------
-echo "Skipping migrations for debugging..."
- for i in {1..3}; do
-   if mix ecto.migrate; then
-     echo "Migrations completed successfully"
-     break
-   else
-     echo "Migration attempt $i failed, retrying in 5 seconds..."
-     sleep 5
-   fi
- done
+echo "Running migrations..."
+for i in {1..3}; do
+  if mix ecto.migrate; then
+    echo "Migrations completed successfully"
+    break
+  else
+    echo "Migration attempt $i failed, retrying in 5 seconds..."
+    sleep 5
+  fi
+done
 
 # ----------------------------
 # Wait for Redis

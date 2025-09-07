@@ -78,7 +78,7 @@ defmodule PhoenixApp.Accounts do
   # Check user password
   # ---------------------
   def check_password(%User{password_hash: hash}, password) when is_binary(password) do
-    Bcrypt.verify_pass(password, hash)
+    Pbkdf2.verify_pass(password, hash)
   end
 
   # ---------------------
@@ -91,7 +91,7 @@ defmodule PhoenixApp.Accounts do
     result = case get_user_by_email(email) do
       nil ->
         # Still run password check to prevent timing attacks
-        Bcrypt.no_user_verify()
+        Pbkdf2.no_user_verify()
         {:error, :invalid_email}
 
       user ->

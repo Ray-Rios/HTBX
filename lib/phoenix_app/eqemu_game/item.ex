@@ -5,7 +5,7 @@ defmodule PhoenixApp.EqemuGame.Item do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  schema "items" do
+  schema "eqemu_items" do
     # Core fields that match the migration
     field :eqemu_id, :integer
     field :name, :string

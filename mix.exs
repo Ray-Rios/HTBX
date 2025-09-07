@@ -49,7 +49,7 @@ defmodule PhoenixApp.MixProject do
       {:absinthe_phoenix, "~> 2.0"},
       {:dataloader, "~> 2.0"},
       {:redix, "~> 1.2"},
-      {:bcrypt_elixir, "~> 3.0"},
+      {:pbkdf2_elixir, "~> 2.0"},
       #{:pbkdf2_elixir, "~> 2.0"},
       ## E-commerce & Payments
       #{:stripity_stripe, "~> 3.0"},

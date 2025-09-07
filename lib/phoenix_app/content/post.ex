@@ -1,6 +1,6 @@
 defmodule PhoenixApp.Content.Post do
   use Ecto.Schema
-  use Arc.Ecto.Schema
+  # Removed Arc.Ecto.Schema - using simple string for featured_image
   import Ecto.Changeset
 
   @primary_key {:id, :binary_id, autogenerate: true}
@@ -10,19 +10,14 @@ defmodule PhoenixApp.Content.Post do
     field :slug, :string
     field :content, :string
     field :excerpt, :string
-    field :status, Ecto.Enum, values: [:published, :draft, :private, :trash], default: :draft
-    field :post_type, :string, default: "post"
+    field :is_published, :boolean, default: false
     field :published_at, :utc_datetime
-    field :featured_image, PhoenixApp.PostImage.Type
+    field :featured_image, :string
     field :meta_description, :string
     field :tags, {:array, :string}, default: []
-    field :comment_status, Ecto.Enum, values: [:open, :closed], default: :open
-    field :menu_order, :integer, default: 0
-    field :comment_count, :integer, default: 0
 
     belongs_to :user, PhoenixApp.Accounts.User
-    belongs_to :parent, __MODULE__, foreign_key: :parent_id
-    has_many :children, __MODULE__, foreign_key: :parent_id
+    # Removed parent/child relationships - not in posts table
     has_many :comments, PhoenixApp.Content.Comment, foreign_key: :post_id
 
     timestamps(type: :utc_datetime)
@@ -31,16 +26,14 @@ defmodule PhoenixApp.Content.Post do
   def changeset(post, attrs) do
     post
     |> cast(attrs, [
-      :title, :slug, :content, :excerpt, :status, :post_type, :published_at, 
-      :meta_description, :tags, :comment_status, :menu_order, :comment_count, :parent_id
+      :title, :slug, :content, :excerpt, :is_published, :published_at, 
+      :meta_description, :tags, :featured_image
     ])
-    |> cast_attachments(attrs, [:featured_image])
     |> validate_required([:title, :content])
     |> validate_length(:title, min: 1, max: 200)
     |> validate_length(:excerpt, max: 500)
     |> validate_length(:meta_description, max: 160)
-    |> validate_inclusion(:status, [:published, :draft, :private, :trash])
-    |> validate_inclusion(:comment_status, [:open, :closed])
+    |> validate_inclusion(:is_published, [true, false])
     |> maybe_generate_slug()
     |> maybe_set_published_at()
     |> unique_constraint(:slug)
@@ -65,21 +58,20 @@ defmodule PhoenixApp.Content.Post do
   end
 
   defp maybe_set_published_at(changeset) do
-    status = get_change(changeset, :status)
+    is_published = get_change(changeset, :is_published)
     current_published_at = get_field(changeset, :published_at)
     
     cond do
-      status == :published and is_nil(current_published_at) ->
+      is_published == true and is_nil(current_published_at) ->
         put_change(changeset, :published_at, DateTime.utc_now())
-      status != :published ->
+      is_published == false ->
         put_change(changeset, :published_at, nil)
       true ->
         changeset
     end
   end
 
-  # Helper functions for CMS compatibility
-  def published?(post), do: post.status == :published
-  def draft?(post), do: post.status == :draft
-  def can_comment?(post), do: post.comment_status == :open
+  # Helper functions
+  def published?(post), do: post.is_published == true
+  def draft?(post), do: post.is_published == false
 end

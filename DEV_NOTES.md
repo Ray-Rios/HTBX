@@ -9,6 +9,8 @@ LIVE_VIEW_SIGNING_SALT= $(mix phx.gen.secret 32)
 Recommended to run dev first and generate secrets in the web docker container
  > docker-compose web RUN mix phx.gen.secret
 
+docker compose exec web ./reset_migrations.sh -d   #full database dump,create,migration rotation. It's like wiping your ass.
+
 
 How it works:
   Dev (docker-compose.yml)

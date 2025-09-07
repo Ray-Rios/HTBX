@@ -5,7 +5,7 @@ defmodule PhoenixApp.EqemuGame.Character do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  schema "characters" do
+  schema "eqemu_characters" do
     field :eqemu_id, :integer
     field :account_id, :integer
     field :name, :string
@@ -71,7 +71,7 @@ defmodule PhoenixApp.EqemuGame.Character do
 
     belongs_to :user, PhoenixApp.Accounts.User
     has_one :stats, PhoenixApp.EqemuGame.CharacterStats
-    has_many :inventory, PhoenixApp.EqemuGame.CharacterInventory
+    # has_many :inventory, PhoenixApp.EqemuGame.CharacterInventory  # Commented out until CharacterInventory schema is created
 
     timestamps()
   end

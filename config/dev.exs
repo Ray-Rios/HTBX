@@ -55,6 +55,6 @@ config :phoenix_app, PhoenixApp.Mailer,
   retries: 1
 
 # ----------------------------
-# Password hashing (dev - Bcrypt is much faster than PBKDF2)
+# Password hashing (dev - PBKDF2)
 # ----------------------------
-config :bcrypt_elixir, :log_rounds, 4  # Fast for development (default is 12)
+config :pbkdf2_elixir, :rounds, 1  # Fast for development (default is 160000)
