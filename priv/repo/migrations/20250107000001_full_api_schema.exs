@@ -115,9 +115,6 @@ defmodule PhoenixApp.Repo.Migrations.ConsolidatedEqemuSchema do
       add :beard_color, :integer, default: 1
       add :eye_color_1, :integer, default: 1
       add :eye_color_2, :integer, default: 1
-      add :drakkin_heritage, :integer, default: 0
-      add :drakkin_tattoo, :integer, default: 0
-      add :drakkin_details, :integer, default: 0
       add :show_helm, :integer, default: 1
       add :fatigue, :integer, default: 0      
 
@@ -148,7 +145,6 @@ defmodule PhoenixApp.Repo.Migrations.ConsolidatedEqemuSchema do
       add :silver_cursor, :integer, default: 0
       add :copper_cursor, :integer, default: 0
       add :radiant_crystals, :integer, default: 0
-      add :career_radiant_crystals, :integer, default: 0
       add :ebon_crystals, :integer, default: 0
       
       # Experience
@@ -884,5 +880,4 @@ defmodule PhoenixApp.Repo.Migrations.ConsolidatedEqemuSchema do
     drop table(:users_tokens)
     drop table(:users)
   end
-
 end
