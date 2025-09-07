@@ -590,7 +590,7 @@ defmodule PhoenixAppWeb.EqemuPlayerLive do
     [
       {"Human", 1},
       {"Barbarian", 2},
-      {"Erudite", 3},
+      {"cat", 3},
       {"Wood Elf", 4},
       {"High Elf", 5},
       {"Dark Elf", 6},

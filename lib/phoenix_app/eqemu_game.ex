@@ -282,7 +282,7 @@ defmodule PhoenixApp.EqemuGame do
     case race_id do
       1 -> "Human"
       2 -> "Barbarian"
-      3 -> "Erudite"
+      3 -> "cat"
       4 -> "Wood Elf"
       5 -> "High Elf"
       6 -> "Dark Elf"

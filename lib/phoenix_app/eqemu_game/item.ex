@@ -198,7 +198,7 @@ defmodule PhoenixApp.EqemuGame.Item do
     race_bit = case race_id do
       1 -> 0   # Human
       2 -> 1   # Barbarian
-      3 -> 2   # Erudite
+      3 -> 2   # cat
       4 -> 3   # Wood Elf
       5 -> 4   # High Elf
       6 -> 5   # Dark Elf
