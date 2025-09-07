@@ -4,7 +4,7 @@ defmodule PhoenixAppWeb.Schema.EqemuTypes do
   alias PhoenixAppWeb.Resolvers.EqemuResolver
 
   # Character Types
-  object :eqemu_character do
+  object :character do
     field :id, non_null(:id)
     field :user_id, non_null(:id)
     field :character_id, :integer
@@ -52,13 +52,13 @@ defmodule PhoenixAppWeb.Schema.EqemuTypes do
 
     # Associations
     field :user, :user, resolve: dataloader(PhoenixApp.Accounts)
-    field :stats, :eqemu_character_stats, resolve: dataloader(PhoenixApp.EqemuGame)
-    field :inventory, list_of(:eqemu_character_inventory), resolve: dataloader(PhoenixApp.EqemuGame)
-    field :guild_membership, :eqemu_guild_member, resolve: dataloader(PhoenixApp.EqemuGame)
-    field :character_tasks, list_of(:eqemu_character_task), resolve: dataloader(PhoenixApp.EqemuGame)
+    field :stats, :character_stats, resolve: dataloader(PhoenixApp.EqemuGame)
+    field :inventory, list_of(:character_inventory), resolve: dataloader(PhoenixApp.EqemuGame)
+    field :guild_membership, :guild_member, resolve: dataloader(PhoenixApp.EqemuGame)
+    field :character_tasks, list_of(:character_task), resolve: dataloader(PhoenixApp.EqemuGame)
   end
 
-  object :eqemu_character_stats do
+  object :character_stats do
     field :id, non_null(:id)
     field :character_id, non_null(:id)
     field :str, :integer
@@ -87,10 +87,10 @@ defmodule PhoenixAppWeb.Schema.EqemuTypes do
     field :dr, :integer
     field :corrup, :integer
 
-    field :character, :eqemu_character, resolve: dataloader(PhoenixApp.EqemuGame)
+    field :character, :character, resolve: dataloader(PhoenixApp.EqemuGame)
   end
 
-  object :eqemu_item do
+  object :item do
     field :id, non_null(:id)
     field :item_id, :integer
     field :name, non_null(:string)
@@ -134,7 +134,7 @@ defmodule PhoenixAppWeb.Schema.EqemuTypes do
     field :awis, :integer
   end
 
-  object :eqemu_character_inventory do
+  object :character_inventory do
     field :id, non_null(:id)
     field :character_id, non_null(:id)
     field :item_id, non_null(:id)
@@ -142,11 +142,11 @@ defmodule PhoenixAppWeb.Schema.EqemuTypes do
     field :charges, :integer
     field :color, :integer
 
-    field :character, :eqemu_character, resolve: dataloader(PhoenixApp.EqemuGame)
-    field :item, :eqemu_item, resolve: dataloader(PhoenixApp.EqemuGame)
+    field :character, :character, resolve: dataloader(PhoenixApp.EqemuGame)
+    field :item, :item, resolve: dataloader(PhoenixApp.EqemuGame)
   end
 
-  object :eqemu_guild do
+  object :guild do
     field :id, non_null(:id)
     field :guild_id, :integer
     field :name, non_null(:string)
@@ -155,10 +155,10 @@ defmodule PhoenixAppWeb.Schema.EqemuTypes do
     field :url, :string
     field :dkp, :integer
 
-    field :members, list_of(:eqemu_guild_member), resolve: dataloader(PhoenixApp.EqemuGame)
+    field :members, list_of(:guild_member), resolve: dataloader(PhoenixApp.EqemuGame)
   end
 
-  object :eqemu_guild_member do
+  object :guild_member do
     field :id, non_null(:id)
     field :guild_id, non_null(:id)
     field :character_id, non_null(:id)
@@ -167,11 +167,11 @@ defmodule PhoenixAppWeb.Schema.EqemuTypes do
     field :public_note, :string
     field :officer_note, :string
 
-    field :guild, :eqemu_guild, resolve: dataloader(PhoenixApp.EqemuGame)
-    field :character, :eqemu_character, resolve: dataloader(PhoenixApp.EqemuGame)
+    field :guild, :guild, resolve: dataloader(PhoenixApp.EqemuGame)
+    field :character, :character, resolve: dataloader(PhoenixApp.EqemuGame)
   end
 
-  object :eqemu_zone do
+  object :zone do
     field :id, non_null(:id)
     field :zoneidnumber, :integer
     field :short_name, non_null(:string)
@@ -183,11 +183,11 @@ defmodule PhoenixAppWeb.Schema.EqemuTypes do
     field :min_level, :integer
     field :expansion, :integer
 
-    field :characters, list_of(:eqemu_character), resolve: dataloader(PhoenixApp.EqemuGame)
-    field :npc_spawns, list_of(:eqemu_npc_spawn), resolve: dataloader(PhoenixApp.EqemuGame)
+    field :characters, list_of(:character), resolve: dataloader(PhoenixApp.EqemuGame)
+    field :npc_spawns, list_of(:npc_spawn), resolve: dataloader(PhoenixApp.EqemuGame)
   end
 
-  object :eqemu_npc do
+  object :npc do
     field :id, non_null(:id)
     field :npc_id, :integer
     field :name, non_null(:string)
@@ -206,7 +206,7 @@ defmodule PhoenixAppWeb.Schema.EqemuTypes do
     field :assistradius, :integer
   end
 
-  object :eqemu_npc_spawn do
+  object :npc_spawn do
     field :id, non_null(:id)
     field :spawn_id, :integer
     field :zone_id, non_null(:id)
@@ -218,11 +218,11 @@ defmodule PhoenixAppWeb.Schema.EqemuTypes do
     field :respawntime, :integer
     field :enabled, :integer
 
-    field :zone, :eqemu_zone, resolve: dataloader(PhoenixApp.EqemuGame)
-    field :npc, :eqemu_npc, resolve: dataloader(PhoenixApp.EqemuGame)
+    field :zone, :zone, resolve: dataloader(PhoenixApp.EqemuGame)
+    field :npc, :npc, resolve: dataloader(PhoenixApp.EqemuGame)
   end
 
-  object :eqemu_spell do
+  object :spell do
     field :id, non_null(:id)
     field :spell_id, :integer
     field :name, non_null(:string)
@@ -255,7 +255,7 @@ defmodule PhoenixAppWeb.Schema.EqemuTypes do
     field :classes16, :integer
   end
 
-  object :eqemu_task do
+  object :task do
     field :id, non_null(:id)
     field :task_id, :integer
     field :type, :integer
@@ -268,10 +268,10 @@ defmodule PhoenixAppWeb.Schema.EqemuTypes do
     field :maxlevel, :integer
     field :repeatable, :integer
 
-    field :character_progress, list_of(:eqemu_character_task), resolve: dataloader(PhoenixApp.EqemuGame)
+    field :character_progress, list_of(:character_task), resolve: dataloader(PhoenixApp.EqemuGame)
   end
 
-  object :eqemu_character_task do
+  object :character_task do
     field :id, non_null(:id)
     field :character_id, non_null(:id)
     field :task_id, non_null(:id)
@@ -280,12 +280,12 @@ defmodule PhoenixAppWeb.Schema.EqemuTypes do
     field :acceptedtime, :datetime
     field :completedtime, :datetime
 
-    field :character, :eqemu_character, resolve: dataloader(PhoenixApp.EqemuGame)
-    field :task, :eqemu_task, resolve: dataloader(PhoenixApp.EqemuGame)
+    field :character, :character, resolve: dataloader(PhoenixApp.EqemuGame)
+    field :task, :task, resolve: dataloader(PhoenixApp.EqemuGame)
   end
 
   # Input Types for Mutations
-  input_object :eqemu_character_input do
+  input_object :character_input do
     field :name, non_null(:string)
     field :race, non_null(:integer)
     field :class, non_null(:integer)
@@ -300,7 +300,7 @@ defmodule PhoenixAppWeb.Schema.EqemuTypes do
     field :deity, :integer
   end
 
-  input_object :eqemu_character_update_input do
+  input_object :character_update_input do
     field :zone_id, :integer
     field :x, :float
     field :y, :float
@@ -316,7 +316,7 @@ defmodule PhoenixAppWeb.Schema.EqemuTypes do
     field :copper, :integer
   end
 
-  input_object :eqemu_inventory_update_input do
+  input_object :inventory_update_input do
     field :item_id, non_null(:id)
     field :slotid, non_null(:integer)
     field :charges, :integer
@@ -326,24 +326,24 @@ defmodule PhoenixAppWeb.Schema.EqemuTypes do
   # Queries
   object :eqemu_queries do
     @desc "Get character by ID"
-    field :eqemu_character, :eqemu_character do
+    field :character, :character do
       arg :id, non_null(:id)
       resolve &EqemuResolver.get_character/3
     end
 
     @desc "Get characters for current user"
-    field :my_eqemu_characters, list_of(:eqemu_character) do
+    field :my_characters, list_of(:character) do
       resolve &EqemuResolver.list_user_characters/3
     end
 
     @desc "Get character inventory"
-    field :eqemu_character_inventory, list_of(:eqemu_character_inventory) do
+    field :character_inventory, list_of(:character_inventory) do
       arg :character_id, non_null(:id)
       resolve &EqemuResolver.get_character_inventory/3
     end
 
     @desc "Get all items"
-    field :eqemu_items, list_of(:eqemu_item) do
+    field :items, list_of(:item) do
       arg :filter, :string
       arg :item_type, :integer
       arg :limit, :integer, default_value: 50
@@ -352,19 +352,19 @@ defmodule PhoenixAppWeb.Schema.EqemuTypes do
     end
 
     @desc "Get item by ID"
-    field :eqemu_item, :eqemu_item do
+    field :item, :item do
       arg :id, :id
       arg :item_id, :integer
       resolve &EqemuResolver.get_item/3
     end
 
     @desc "Get all zones"
-    field :eqemu_zones, list_of(:eqemu_zone) do
+    field :zones, list_of(:zone) do
       resolve &EqemuResolver.list_zones/3
     end
 
     @desc "Get zone by ID"
-    field :eqemu_zone, :eqemu_zone do
+    field :zone, :zone do
       arg :id, :id
       arg :zone_id, :integer
       arg :short_name, :string
@@ -372,37 +372,37 @@ defmodule PhoenixAppWeb.Schema.EqemuTypes do
     end
 
     @desc "Get guild by ID"
-    field :eqemu_guild, :eqemu_guild do
+    field :guild, :guild do
       arg :id, non_null(:id)
       resolve &EqemuResolver.get_guild/3
     end
 
     @desc "Get character's guild"
-    field :eqemu_character_guild, :eqemu_guild do
+    field :character_guild, :guild do
       arg :character_id, non_null(:id)
       resolve &EqemuResolver.get_character_guild/3
     end
 
     @desc "Get available quests for character"
-    field :eqemu_available_quests, list_of(:eqemu_task) do
+    field :eqemu_available_quests, list_of(:task) do
       arg :character_id, non_null(:id)
       resolve &EqemuResolver.get_available_quests/3
     end
 
     @desc "Get character's active quests"
-    field :eqemu_character_quests, list_of(:eqemu_character_task) do
+    field :character_quests, list_of(:character_task) do
       arg :character_id, non_null(:id)
       resolve &EqemuResolver.get_character_quests/3
     end
 
     @desc "Get NPCs in zone"
-    field :eqemu_zone_npcs, list_of(:eqemu_npc_spawn) do
+    field :zone_npcs, list_of(:npc_spawn) do
       arg :zone_id, non_null(:id)
       resolve &EqemuResolver.get_zone_npcs/3
     end
 
     @desc "Get spells for class"
-    field :eqemu_class_spells, list_of(:eqemu_spell) do
+    field :eqemu_class_spells, list_of(:spell) do
       arg :class_id, non_null(:integer)
       arg :level, :integer
       resolve &EqemuResolver.get_class_spells/3
@@ -412,60 +412,60 @@ defmodule PhoenixAppWeb.Schema.EqemuTypes do
   # Mutations
   object :eqemu_mutations do
     @desc "Create a new character"
-    field :create_eqemu_character, :eqemu_character do
-      arg :input, non_null(:eqemu_character_input)
+    field :create_character, :character do
+      arg :input, non_null(:character_input)
       resolve &EqemuResolver.create_character/3
     end
 
     @desc "Update character position and stats"
-    field :update_eqemu_character, :eqemu_character do
+    field :update_character, :character do
       arg :id, non_null(:id)
-      arg :input, non_null(:eqemu_character_update_input)
+      arg :input, non_null(:character_update_input)
       resolve &EqemuResolver.update_character/3
     end
 
     @desc "Delete character"
-    field :delete_eqemu_character, :eqemu_character do
+    field :delete_character, :character do
       arg :id, non_null(:id)
       resolve &EqemuResolver.delete_character/3
     end
 
     @desc "Update character inventory"
-    field :update_eqemu_inventory, :eqemu_character_inventory do
+    field :update_eqemu_inventory, :character_inventory do
       arg :character_id, non_null(:id)
-      arg :input, non_null(:eqemu_inventory_update_input)
+      arg :input, non_null(:inventory_update_input)
       resolve &EqemuResolver.update_inventory/3
     end
 
     @desc "Join guild"
-    field :join_eqemu_guild, :eqemu_guild_member do
+    field :join_guild, :guild_member do
       arg :character_id, non_null(:id)
       arg :guild_id, non_null(:id)
       resolve &EqemuResolver.join_guild/3
     end
 
     @desc "Leave guild"
-    field :leave_eqemu_guild, :eqemu_guild_member do
+    field :leave_guild, :guild_member do
       arg :character_id, non_null(:id)
       resolve &EqemuResolver.leave_guild/3
     end
 
     @desc "Accept quest"
-    field :accept_eqemu_quest, :eqemu_character_task do
+    field :accept_eqemu_quest, :character_task do
       arg :character_id, non_null(:id)
       arg :task_id, non_null(:id)
       resolve &EqemuResolver.accept_quest/3
     end
 
     @desc "Complete quest"
-    field :complete_eqemu_quest, :eqemu_character_task do
+    field :complete_eqemu_quest, :character_task do
       arg :character_id, non_null(:id)
       arg :task_id, non_null(:id)
       resolve &EqemuResolver.complete_quest/3
     end
 
     @desc "Zone character to new zone"
-    field :zone_eqemu_character, :eqemu_character do
+    field :zone_character, :character do
       arg :character_id, non_null(:id)
       arg :zone_id, non_null(:integer)
       arg :x, :float
@@ -479,29 +479,29 @@ defmodule PhoenixAppWeb.Schema.EqemuTypes do
   # Subscriptions for real-time updates
   object :eqemu_subscriptions do
     @desc "Subscribe to character updates"
-    field :eqemu_character_updated, :eqemu_character do
+    field :character_updated, :character do
       arg :character_id, non_null(:id)
       
       config fn args, _info ->
-        {:ok, topic: "eqemu_character:#{args.character_id}"}
+        {:ok, topic: "character:#{args.character_id}"}
       end
     end
 
     @desc "Subscribe to zone updates"
-    field :eqemu_zone_updated, :eqemu_zone do
+    field :zone_updated, :zone do
       arg :zone_id, non_null(:integer)
       
       config fn args, _info ->
-        {:ok, topic: "eqemu_zone:#{args.zone_id}"}
+        {:ok, topic: "zone:#{args.zone_id}"}
       end
     end
 
     @desc "Subscribe to guild updates"
-    field :eqemu_guild_updated, :eqemu_guild do
+    field :guild_updated, :guild do
       arg :guild_id, non_null(:id)
       
       config fn args, _info ->
-        {:ok, topic: "eqemu_guild:#{args.guild_id}"}
+        {:ok, topic: "guild:#{args.guild_id}"}
       end
     end
   end

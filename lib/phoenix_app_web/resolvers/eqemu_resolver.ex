@@ -50,7 +50,7 @@ defmodule PhoenixAppWeb.Resolvers.EqemuResolver do
         Absinthe.Subscription.publish(
           PhoenixAppWeb.Endpoint,
           character,
-          eqemu_character_updated: "eqemu_character:#{character.id}"
+          character_updated: "character:#{character.id}"
         )
         
         {:ok, character}
@@ -70,7 +70,7 @@ defmodule PhoenixAppWeb.Resolvers.EqemuResolver do
           Absinthe.Subscription.publish(
             PhoenixAppWeb.Endpoint,
             updated_character,
-            eqemu_character_updated: "eqemu_character:#{updated_character.id}"
+            character_updated: "character:#{updated_character.id}"
           )
           
           {:ok, updated_character}
@@ -193,7 +193,7 @@ defmodule PhoenixAppWeb.Resolvers.EqemuResolver do
           Absinthe.Subscription.publish(
             PhoenixAppWeb.Endpoint,
             updated_character,
-            eqemu_character_updated: %{eqemu_character: "#{updated_character.id}"}
+            character_updated: %{character: "#{updated_character.id}"}
           )
           
           {:ok, updated_character}

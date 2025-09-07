@@ -5,7 +5,7 @@ defmodule PhoenixApp.EqemuGame.CharacterStats do
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
 
-  schema "eqemu_character_stats" do
+  schema "character_stats" do
     field :str, :integer, default: 75
     field :sta, :integer, default: 75
     field :cha, :integer, default: 75

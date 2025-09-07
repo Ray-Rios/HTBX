@@ -1,14 +1,14 @@
-defmodule PhoenixApp.Repo.Migrations.EqemuApi do
+defmodule PhoenixApp.Repo.Migrations.ConsolidatedEqemuSchema do
   use Ecto.Migration
   @disable_ddl_transaction true
 
   def up do
     # ============================================================================
-    # USERS SYSTEM (API)
+    # USERS SYSTEM (API) - Keep existing users system
     # ============================================================================
     
-    # Create users table
-    create table(:users, primary_key: false) do
+    # Create users table (if not exists)
+    create_if_not_exists table(:users, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :email, :string, null: false
       add :name, :string
@@ -31,12 +31,12 @@ defmodule PhoenixApp.Repo.Migrations.EqemuApi do
       timestamps(type: :utc_datetime)
     end
 
-    create unique_index(:users, [:email])
-    create index(:users, [:is_admin])
-    create index(:users, [:two_factor_enabled])
+    create_if_not_exists unique_index(:users, [:email])
+    create_if_not_exists index(:users, [:is_admin])
+    create_if_not_exists index(:users, [:two_factor_enabled])
 
-    # Create users tokens table
-    create table(:users_tokens, primary_key: false) do
+    # Create users tokens table (if not exists)
+    create_if_not_exists table(:users_tokens, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :user_id, references(:users, type: :binary_id, on_delete: :delete_all), null: false
       add :token, :binary, null: false
@@ -45,15 +45,15 @@ defmodule PhoenixApp.Repo.Migrations.EqemuApi do
       timestamps(updated_at: false, type: :utc_datetime)
     end
 
-    create index(:users_tokens, [:user_id])
-    create unique_index(:users_tokens, [:context, :token])
+    create_if_not_exists index(:users_tokens, [:user_id])
+    create_if_not_exists unique_index(:users_tokens, [:context, :token])
 
     # ============================================================================
-    # EQEMU ACCOUNTS SYSTEM
+    #            GAME TABLES
     # ============================================================================
     
-    # EQEmu accounts (maps to Phoenix users with CASCADE DELETE)
-    create table(:eqemu_accounts, primary_key: false) do
+    # Accounts table (maps to Phoenix users with CASCADE DELETE)
+    create table(:accounts, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :user_id, references(:users, type: :binary_id, on_delete: :delete_all), null: false
       add :eqemu_id, :integer, null: false  # Original account ID from PEQ
@@ -76,16 +76,12 @@ defmodule PhoenixApp.Repo.Migrations.EqemuApi do
       timestamps()
     end
 
-    create unique_index(:eqemu_accounts, [:eqemu_id])
-    create unique_index(:eqemu_accounts, [:name])
-    create unique_index(:eqemu_accounts, [:user_id])
+    create unique_index(:accounts, [:eqemu_id])
+    create unique_index(:accounts, [:name])
+    create unique_index(:accounts, [:user_id])
 
-    # ============================================================================
-    # EQEMU CORE CHARACTER SYSTEM
-    # ============================================================================
-    
-    # Main character data table (based on PEQ character_data with CASCADE DELETE)
-    create table(:eqemu_characters, primary_key: false) do
+    # Main Characters table (with CASCADE DELETE)
+    create table(:characters, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :user_id, references(:users, type: :binary_id, on_delete: :delete_all), null: false
       
@@ -117,7 +113,11 @@ defmodule PhoenixApp.Repo.Migrations.EqemuApi do
       add :hair_style, :integer, default: 1
       add :beard, :integer, default: 0
       add :beard_color, :integer, default: 1
-      add :eye_color, :integer, default: 1
+      add :eye_color_1, :integer, default: 1
+      add :eye_color_2, :integer, default: 1
+      add :drakkin_heritage, :integer, default: 0
+      add :drakkin_tattoo, :integer, default: 0
+      add :drakkin_details, :integer, default: 0
       add :show_helm, :integer, default: 1
       add :fatigue, :integer, default: 0      
 
@@ -150,7 +150,6 @@ defmodule PhoenixApp.Repo.Migrations.EqemuApi do
       add :radiant_crystals, :integer, default: 0
       add :career_radiant_crystals, :integer, default: 0
       add :ebon_crystals, :integer, default: 0
-      add :career_ebon_crystals, :integer, default: 0
       
       # Experience
       add :exp, :integer, default: 0
@@ -163,328 +162,175 @@ defmodule PhoenixApp.Repo.Migrations.EqemuApi do
       add :group_leadership_points, :integer, default: 0
       add :raid_leadership_points, :integer, default: 0
       
-      # PvP and Karma
+      # PvP and other systems
       add :pvp_status, :integer, default: 0
-      add :pvp_kills, :integer, default: 0
-      add :pvp_deaths, :integer, default: 0
-      add :pvp_current_points, :integer, default: 0
-      add :pvp_career_points, :integer, default: 0
-      add :pvp_best_kill_streak, :integer, default: 0
-      add :pvp_worst_death_streak, :integer, default: 0
-      add :pvp_current_kill_streak, :integer, default: 0
-      add :pvp_type, :integer, default: 0
-
-      
-      # Dkp and other systems
-      add :dkp_time_remaining, :integer, default: 0
-      add :dkp_career_points, :integer, default: 0
-      add :dkp_points, :integer, default: 0
-      add :dkp_active, :integer, default: 0
-      add :endurance_percent, :integer, default: 100
-      add :grouping_disabled, :integer, default: 0
-      add :raid_grouped, :integer, default: 0
       add :mailkey, :string, size: 16
       add :xtargets, :integer, default: 5
       add :firstlogon, :integer, default: 0
       add :e_aa_effects, :integer, default: 0
       add :e_percent_to_aa, :integer, default: 0
       add :e_expended_aa_spent, :integer, default: 0
-      add :boatname, :string, size: 16
-      add :boatid, :integer, default: 0
       
       timestamps()
     end
 
-    create unique_index(:eqemu_characters, [:eqemu_id])
-    create unique_index(:eqemu_characters, [:name])
-    create index(:eqemu_characters, [:user_id])
-    create index(:eqemu_characters, [:account_id])
-    create index(:eqemu_characters, [:level])
-    create index(:eqemu_characters, [:zone_id])
-    create index(:eqemu_characters, [:race])
-    create index(:eqemu_characters, [:class])
+    create unique_index(:characters, [:eqemu_id])
+    create unique_index(:characters, [:name])
+    create index(:characters, [:user_id])
+    create index(:characters, [:account_id])
+    create index(:characters, [:level])
+    create index(:characters, [:zone_id])
+    create index(:characters, [:race])
+    create index(:characters, [:class])
 
     # Add cascade constraint for characters -> accounts
     execute """
-    ALTER TABLE eqemu_characters 
-    ADD CONSTRAINT eqemu_characters_account_cascade 
+    ALTER TABLE characters 
+    ADD CONSTRAINT characters_account_cascade 
     FOREIGN KEY (account_id) 
-    REFERENCES eqemu_accounts(eqemu_id) 
+    REFERENCES accounts(eqemu_id) 
     ON DELETE CASCADE
     """
 
-    # ============================================================================
-    # EQEMU ITEMS SYSTEM
-    # ============================================================================
-    
-    # Items table (based on PEQ items)
-    create table(:eqemu_items, primary_key: false) do
+    # Character stats table (separate from main character data)
+    create table(:character_stats, primary_key: false) do
+      add :id, :binary_id, primary_key: true
+      add :character_id, references(:characters, type: :binary_id, on_delete: :delete_all), null: false
+      add :eqemu_id, :integer, null: false
+      
+      # All the detailed stats
+      add :str, :integer, default: 75
+      add :sta, :integer, default: 75
+      add :cha, :integer, default: 75
+      add :dex, :integer, default: 75
+      add :int, :integer, default: 75
+      add :agi, :integer, default: 75
+      add :wis, :integer, default: 75
+      add :magic, :integer, default: 0
+      add :cold, :integer, default: 0
+      add :fire, :integer, default: 0
+      add :poison, :integer, default: 0
+      add :disease, :integer, default: 0
+      add :corruption, :integer, default: 0
+      
+      timestamps()
+    end
+
+    create unique_index(:character_stats, [:character_id])
+    create unique_index(:character_stats, [:eqemu_id])
+
+    # Items table (based on PEQ items) - CLEAN VERSION
+    create table(:items, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :eqemu_id, :integer, null: false  # Original item ID from PEQ
       add :minstatus, :integer, default: 0
       add :name, :string, size: 64, null: false
+      add :weight, :integer, default: 0  # Added from missing fields
+      add :reqlevel, :integer, default: 0  # Added from missing fields
+      
+      # Core item stats
       add :agi, :integer, default: 0
       add :ac, :integer, default: 0
       add :accuracy, :integer, default: 0
       add :cha, :integer, default: 0
       add :dex, :integer, default: 0
       add :int, :integer, default: 0
-      add :artifactflag, :integer, default: 0
       add :sta, :integer, default: 0
       add :str, :integer, default: 0
-      add :attack, :integer, default: 0
-      add :materiarestrict, :integer, default: 0
-      add :materiaslot1type, :integer, default: 0
-      add :materiaslot1visible, :integer, default: 0
-      add :materiaslot2type, :integer, default: 0
-      add :materiaslot2visible, :integer, default: 0
-      add :materiaslot3type, :integer, default: 0
-      add :materiaslot3visible, :integer, default: 0
-      add :materiaslot4type, :integer, default: 0
-      add :materiaslot4visible, :integer, default: 0
-      add :materiaslot5type, :integer, default: 0
-      add :materiaslot5visible, :integer, default: 0
-      add :materiaslot6type, :integer, default: 0
-      add :materiaslot6visible, :integer, default: 0
-      add :materiatype, :integer, default: 0
-      add :avoidance, :integer, default: 0
       add :wis, :integer, default: 0
-      add :bagsize, :integer, default: 0
-      add :bagslots, :integer, default: 0
-      add :bagtype, :integer, default: 0
-      add :bagwr, :integer, default: 0
-      add :banedmgamt, :integer, default: 0
-      add :banedmgraceamt, :integer, default: 0
-      add :banedmgbody, :integer, default: 0
-      add :banedmgrace, :integer, default: 0
-      add :bardtype, :integer, default: 0
-      add :bardvalue, :integer, default: 0
-      add :book, :integer, default: 0
-      add :casttime, :integer, default: 0
-      add :casttime_, :integer, default: 0
-      add :charmfile, :string, size: 32
-      add :charmfileid, :string, size: 32
-      add :classes, :integer, default: 0
-      add :color, :integer, default: 0
-      add :combateffects, :string, size: 10
-      add :extradmgskill, :integer, default: 0
-      add :extradmgamt, :integer, default: 0
-      add :price, :integer, default: 0
-      add :cr, :integer, default: 0
-      add :damage, :integer, default: 0
-      add :damageshield, :integer, default: 0
-      add :deity, :integer, default: 0
-      add :delay, :integer, default: 0
-      add :materiaextractor, :integer, default: 0
-      add :dotshielding, :integer, default: 0
-      add :dr, :integer, default: 0
-      add :clicktype, :integer, default: 0
-      add :clicklevel2, :integer, default: 0
-      add :elemdmgtype, :integer, default: 0
-      add :elemdmgamt, :integer, default: 0
-      add :endur, :integer, default: 0
-      add :factionamt1, :integer, default: 0
-      add :factionamt2, :integer, default: 0
-      add :factionamt3, :integer, default: 0
-      add :factionamt4, :integer, default: 0
-      add :factionmod1, :integer, default: 0
-      add :factionmod2, :integer, default: 0
-      add :factionmod3, :integer, default: 0
-      add :factionmod4, :integer, default: 0
-      add :filename, :string, size: 32
-      add :focuseffect, :integer, default: 0
-      add :fr, :integer, default: 0
-      add :haste, :integer, default: 0
-      add :clicklevel, :integer, default: 0
+      add :attack, :integer, default: 0
       add :hp, :integer, default: 0
-      add :regen, :integer, default: 0
-      add :icon, :integer, default: 0
-      add :idfile, :string, size: 30
-      add :itemclass, :integer, default: 0
-      add :itemtype, :integer, default: 0
-      add :ldonprice, :integer, default: 0
-      add :ldontheme, :integer, default: 0
-      add :ldonsold, :integer, default: 0
-      add :light, :integer, default: 0
-      add :lore, :string, size: 80
-      add :loregroup, :integer, default: 0
-      add :magic, :integer, default: 0
       add :mana, :integer, default: 0
+      add :endur, :integer, default: 0
+      add :regen, :integer, default: 0
       add :manaregen, :integer, default: 0
       add :enduranceregen, :integer, default: 0
+      
+      # Item properties
+      add :itemtype, :integer, default: 0
+      add :itemclass, :integer, default: 0
+      add :classes, :integer, default: 0
+      add :races, :integer, default: 0
+      add :slots, :integer, default: 0
+      add :price, :integer, default: 0
+      add :sellrate, :float, default: 1.0
+      add :size, :integer, default: 0
+      add :color, :integer, default: 0
+      add :icon, :integer, default: 0
       add :material, :integer, default: 0
-      add :herosforgemodel, :integer, default: 0
-      add :maxcharges, :integer, default: 0
-      add :mr, :integer, default: 0
+      add :delay, :integer, default: 0
+      add :damage, :integer, default: 0
+      add :range, :integer, default: 0
+      
+      # Flags and restrictions
       add :nodrop, :integer, default: 0
       add :norent, :integer, default: 0
-      add :pendingloreflag, :integer, default: 0
-      add :pr, :integer, default: 0
-      add :procrate, :integer, default: 0
-      add :races, :integer, default: 0
-      add :range, :integer, default: 0
-      add :reclevel, :integer, default: 0
-      add :recskill, :integer, default: 0
-      add :reqlevel, :integer, default: 0
-      add :sellrate, :float, default: 1.0
-      add :shielding, :integer, default: 0
-      add :size, :integer, default: 0
-      add :skillmodtype, :integer, default: 0
-      add :skillmodvalue, :integer, default: 0
-      add :slots, :integer, default: 0
-      add :clickeffect, :integer, default: 0
-      add :spellshield, :integer, default: 0
-      add :strikethrough, :integer, default: 0
-      add :stunresist, :integer, default: 0
+      add :magic, :integer, default: 0
+      add :lore, :string, size: 80
+      add :loregroup, :integer, default: 0
+      add :artifactflag, :integer, default: 0
       add :summonedflag, :integer, default: 0
+      add :questitemflag, :integer, default: 0
       add :tradeskills, :integer, default: 0
-      add :favor, :integer, default: 0
-      add :weight, :integer, default: 0
-      add :benefitflag, :integer, default: 0
-      add :booktype, :integer, default: 0
-      add :recastdelay, :integer, default: 0
-      add :recasttype, :integer, default: 0
-      add :guildfavor, :integer, default: 0
-      add :attuneable, :integer, default: 0
-      add :nopet, :integer, default: 0
-      add :updated, :utc_datetime, default: fragment("NOW()")
-      add :comment, :text
-      add :pointtype, :integer, default: 0
-      add :potionbelt, :integer, default: 0
-      add :potionbeltslots, :integer, default: 0
-      add :stacksize, :integer, default: 0
-      add :notransfer, :integer, default: 0
       add :stackable, :integer, default: 0
+      add :stacksize, :integer, default: 0
+      
+      # Effects and spells
+      add :clickeffect, :integer, default: 0
+      add :clicktype, :integer, default: 0
+      add :clicklevel, :integer, default: 0
       add :proceffect, :integer, default: 0
       add :proctype, :integer, default: 0
-      add :proclevel2, :integer, default: 0
       add :proclevel, :integer, default: 0
       add :worneffect, :integer, default: 0
       add :worntype, :integer, default: 0
-      add :wornlevel2, :integer, default: 0
       add :wornlevel, :integer, default: 0
+      add :focuseffect, :integer, default: 0
       add :focustype, :integer, default: 0
-      add :focuslevel2, :integer, default: 0
       add :focuslevel, :integer, default: 0
-      add :scrolleffect, :integer, default: 0
-      add :scrolltype, :integer, default: 0
-      add :scrolllevel2, :integer, default: 0
-      add :scrolllevel, :integer, default: 0
-      add :serialized, :utc_datetime
-      add :verified, :utc_datetime
-      add :serialization, :text
-      add :source, :string, size: 20, default: "Unknown"
-      add :lorefile, :string, size: 32
+      
+      # Resistances
+      add :cr, :integer, default: 0
+      add :dr, :integer, default: 0
+      add :fr, :integer, default: 0
+      add :mr, :integer, default: 0
+      add :pr, :integer, default: 0
       add :svcorruption, :integer, default: 0
-      add :skillmodmax, :integer, default: 0
-      add :questitemflag, :integer, default: 0
-      add :clickeffect1, :integer, default: 0
-      add :clickeffect2, :string, size: 32
-      add :clickeffect3, :integer, default: 0
-      add :proc1, :integer, default: 0
-      add :proc2, :integer, default: 0
-      add :proc3, :integer, default: 0
-      add :proc4, :integer, default: 0
-      add :proc6, :string, size: 32
-      add :proc7, :integer, default: 0
-      add :worn1, :integer, default: 0
-      add :worn2, :integer, default: 0
-      add :worn3, :integer, default: 0
-      add :worn4, :integer, default: 0
-      add :worn5, :integer, default: 0
-      add :worn6, :string, size: 32
-      add :worn7, :integer, default: 0
-      add :focus1, :integer, default: 0
-      add :focus2, :integer, default: 0
-      add :focus3, :integer, default: 0
-      add :focus4, :integer, default: 0
-      add :focus5, :integer, default: 0
-      add :focus6, :string, size: 32
-      add :focus7, :integer, default: 0
-      add :scroll1, :integer, default: 0
-      add :scroll2, :integer, default: 0
-      add :scroll3, :integer, default: 0
-      add :scroll4, :integer, default: 0
-      add :scroll5, :integer, default: 0
-      add :scroll6, :string, size: 32
-      add :scroll7, :integer, default: 0
-      add :purity, :integer, default: 0
-      add :clickname, :string, size: 64
-      add :procname, :string, size: 64
-      add :wornname, :string, size: 64
-      add :focusname, :string, size: 64
-      add :scrollname, :string, size: 64
-      add :dsmitigation, :integer, default: 0
-      add :healamt, :integer, default: 0
-      add :spelldmg, :integer, default: 0
-      add :clairvoyance, :integer, default: 0
-      add :backstabdmg, :integer, default: 0
-      add :created, :string, size: 64
-      add :elitematerial, :integer, default: 0
-      add :scriptfileid, :integer, default: 0
-      add :expendablearrow, :integer, default: 0
-      add :powersourcecapacity, :integer, default: 0
-      add :bardeffect, :integer, default: 0
-      add :bardeffecttype, :integer, default: 0
-      add :bardlevel, :integer, default: 0
-      add :bard1, :integer, default: 0
-      add :bard2, :integer, default: 0
-      add :bard3, :integer, default: 0
-      add :bard4, :integer, default: 0
-      add :bard5, :integer, default: 0
-      add :bardname, :string, size: 64
-      add :bard7, :integer, default: 0
-      add :subtype, :integer, default: 0
-      add :heirloom, :integer, default: 0
-      add :placeable, :integer, default: 0
-      add :epicitem, :integer, default: 0
-
+      
+      # Metadata
+      add :updated, :utc_datetime, default: fragment("NOW()")
+      add :comment, :text
+      add :source, :string, size: 20, default: "Unknown"
+      
       timestamps()
     end
 
-    create unique_index(:eqemu_items, [:eqemu_id])
-    create index(:eqemu_items, [:name])
-    create index(:eqemu_items, [:itemtype])
-    create index(:eqemu_items, [:classes])
-    create index(:eqemu_items, [:races])
-    create index(:eqemu_items, [:reqlevel])
+    create unique_index(:items, [:eqemu_id])
+    create index(:items, [:name])
+    create index(:items, [:itemtype])
+    create index(:items, [:classes])
+    create index(:items, [:races])
+    create index(:items, [:reqlevel])
 
-    # ============================================================================
-    # EQEMU CHARACTER INVENTORY
-    # ============================================================================
-    
-    # Character inventory (simplified from PEQ character_inventory)
-    create table(:eqemu_character_inventory, primary_key: false) do
+    # Character inventory table
+    create table(:character_inventory, primary_key: false) do
       add :id, :binary_id, primary_key: true
-      add :character_id, references(:eqemu_characters, type: :binary_id, on_delete: :delete_all), null: false
-      add :item_id, references(:eqemu_items, type: :binary_id), null: false
+      add :character_id, references(:characters, type: :binary_id, on_delete: :delete_all), null: false
+      add :item_id, references(:items, type: :binary_id), null: false
       add :slot_id, :integer, null: false
       add :charges, :integer, default: 1
       add :color, :integer, default: 0
-      add :materia1, references(:eqemu_items, type: :binary_id)
-      add :materia2, references(:eqemu_items, type: :binary_id)
-      add :materia3, references(:eqemu_items, type: :binary_id)
-      add :materia4, references(:eqemu_items, type: :binary_id)
-      add :materia5, references(:eqemu_items, type: :binary_id)
-      add :materia6, references(:eqemu_items, type: :binary_id)
       add :instnodrop, :integer, default: 0
       add :custom_data, :text
-      add :ornamenticon, :integer, default: 0
-      add :ornamentidfile, :string, size: 32
-      add :ornament_hero_model, :integer, default: 0
 
       timestamps()
     end
 
-    create unique_index(:eqemu_character_inventory, [:character_id, :slot_id])
-    create index(:eqemu_character_inventory, [:item_id])
+    create unique_index(:character_inventory, [:character_id, :slot_id])
+    create index(:character_inventory, [:item_id])
 
-    # ============================================================================
-    # EQEMU GUILDS SYSTEM
-    # ============================================================================
-    
-    # Guilds table (based on PEQ guilds)
-    create table(:eqemu_guilds, primary_key: false) do
+    # Guilds table
+    create table(:guilds, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :eqemu_id, :integer, null: false  # Original guild ID from PEQ
       add :name, :string, size: 32, null: false
@@ -492,136 +338,58 @@ defmodule PhoenixApp.Repo.Migrations.EqemuApi do
       add :moto_of_the_day, :text
       add :channel, :string, size: 128
       add :url, :text
-      add :emblem, :integer, default: 0
-      add :dkp, :integer, default: 0
 
       timestamps()
     end
 
-    create unique_index(:eqemu_guilds, [:eqemu_id])
-    create unique_index(:eqemu_guilds, [:name])
+    create unique_index(:guilds, [:eqemu_id])
+    create unique_index(:guilds, [:name])
 
-    # Guild members (based on PEQ guild_members)
-    create table(:eqemu_guild_members, primary_key: false) do
+    # Guild members table
+    create table(:guild_members, primary_key: false) do
       add :id, :binary_id, primary_key: true
-      add :guild_id, references(:eqemu_guilds, type: :binary_id, on_delete: :delete_all), null: false
-      add :character_id, references(:eqemu_characters, type: :binary_id, on_delete: :delete_all), null: false
+      add :guild_id, references(:guilds, type: :binary_id, on_delete: :delete_all), null: false
+      add :character_id, references(:characters, type: :binary_id, on_delete: :delete_all), null: false
       add :rank, :integer, default: 0
-      add :dkp, :integer, default: 0
-      add :last_dkp, :integer, default: 0
-      add :banker, :integer, default: 0
       add :public_note, :text
       add :officer_note, :text
-      add :total_dkp, :integer, default: 0
-      add :last_dkp_time, :integer, default: 0
 
       timestamps()
     end
 
-    create unique_index(:eqemu_guild_members, [:guild_id, :character_id])
-    create index(:eqemu_guild_members, [:character_id])
+    create unique_index(:guild_members, [:guild_id, :character_id])
+    create index(:guild_members, [:character_id])
 
-    # ============================================================================
-    # EQEMU ZONES SYSTEM
-    # ============================================================================
-    
-    # Zones table (based on PEQ zone)
-    create table(:eqemu_zones, primary_key: false) do
+    # Zones table
+    create table(:zones, primary_key: false) do
       add :id, :binary_id, primary_key: true
       add :eqemu_id, :integer, null: false  # Original zone ID from PEQ
       add :short_name, :string, size: 32, null: false
       add :long_name, :text, null: false
-      add :map_file_name, :string, size: 100
       add :safe_x, :float, default: 0.0
       add :safe_y, :float, default: 0.0
       add :safe_z, :float, default: 0.0
       add :safe_heading, :float, default: 0.0
-      add :graveyard_id, :float, default: 0.0
       add :min_level, :integer, default: 1
       add :max_level, :integer, default: 255
       add :min_status, :integer, default: 0
       add :zoneidnumber, :integer, default: 0
-      add :version, :integer, default: 0
-      add :timezone, :integer, default: 0
-      add :maxclients, :integer, default: 0
-      add :ruleset, :integer, default: 0
-      add :note, :string, size: 80
-      add :underworld, :float, default: 0.0
-      add :minclip, :float, default: 450.0
-      add :maxclip, :float, default: 450.0
-      add :fog_minclip, :float, default: 450.0
-      add :fog_maxclip, :float, default: 450.0
-      add :fog_blue, :integer, default: 0
-      add :fog_red, :integer, default: 0
-      add :fog_green, :integer, default: 0
-      add :sky, :integer, default: 1
-      add :ztype, :integer, default: 1
-      add :zone_exp_multiplier, :decimal, default: 0.00
-      add :walkspeed, :float, default: 0.4
-      add :time_type, :integer, default: 2
-      add :fog_red1, :integer, default: 0
-      add :fog_green1, :integer, default: 0
-      add :fog_blue1, :integer, default: 0
-      add :fog_minclip1, :float, default: 450.0
-      add :fog_maxclip1, :float, default: 450.0
-      add :fog_red2, :integer, default: 0
-      add :fog_green2, :integer, default: 0
-      add :fog_blue2, :integer, default: 0
-      add :fog_minclip2, :float, default: 450.0
-      add :fog_maxclip2, :float, default: 450.0
-      add :fog_red3, :integer, default: 0
-      add :fog_green3, :integer, default: 0
-      add :fog_blue3, :integer, default: 0
-      add :fog_minclip3, :float, default: 450.0
-      add :fog_maxclip3, :float, default: 450.0
-      add :fog_red4, :integer, default: 0
-      add :fog_green4, :integer, default: 0
-      add :fog_blue4, :integer, default: 0
-      add :fog_minclip4, :float, default: 450.0
-      add :fog_maxclip4, :float, default: 450.0
-      add :flag_needed, :string, size: 128
-      add :canbind, :integer, default: 1
-      add :cancombat, :integer, default: 1
-      add :canlevitate, :integer, default: 1
-      add :castoutdoor, :integer, default: 1
-      add :hotzone, :integer, default: 0
-      add :insttype, :integer, default: 0
-      add :shutdowndelay, :bigint, default: 5000
-      add :peqzone, :integer, default: 1
       add :expansion, :integer, default: 0
-      add :suspendbuffs, :integer, default: 0
-      add :rain_chance1, :integer, default: 0
-      add :rain_chance2, :integer, default: 0
-      add :rain_chance3, :integer, default: 0
-      add :rain_chance4, :integer, default: 0
-      add :rain_duration1, :integer, default: 0
-      add :rain_duration2, :integer, default: 0
-      add :rain_duration3, :integer, default: 0
-      add :rain_duration4, :integer, default: 0
-      add :snow_chance1, :integer, default: 0
-      add :snow_chance2, :integer, default: 0
-      add :snow_chance3, :integer, default: 0
-      add :snow_chance4, :integer, default: 0
-      add :snow_duration1, :integer, default: 0
-      add :snow_duration2, :integer, default: 0
-      add :snow_duration3, :integer, default: 0
-      add :snow_duration4, :integer, default: 0
-      add :gravity, :float, default: 0.4
-      add :type, :integer, default: 0
-      add :skylock, :integer, default: 0
-      add :fast_regen_hp, :integer, default: 180
-      add :fast_regen_mana, :integer, default: 180
-      add :fast_regen_endurance, :integer, default: 180
-      add :npc_max_aggro_dist, :integer, default: 600
-      add :max_movement_update_range, :integer, default: 600
 
       timestamps()
     end
 
-    create unique_index(:eqemu_zones, [:eqemu_id])
-    create unique_index(:eqemu_zones, [:short_name])
-    create index(:eqemu_zones, [:long_name])
-    create index(:eqemu_zones, [:expansion])
+    create unique_index(:zones, [:eqemu_id])
+    create unique_index(:zones, [:short_name])
+    create index(:zones, [:expansion])
+
+    # ============================================================================
+    # KEEP EXISTING CMS TABLES (if they exist)
+    # ============================================================================
+    
+    # Posts, pages, comments, etc. - these should remain unchanged
+    # They will be created by the existing migration if not present
+  end
 
     # ============================================================================
     # API CONTENT MANAGEMENT SYSTEM
@@ -1105,14 +873,16 @@ defmodule PhoenixApp.Repo.Migrations.EqemuApi do
     drop table(:comments)
     drop table(:pages)
     drop table(:posts)
-    drop table(:eqemu_guild_members)
-    drop table(:eqemu_guilds)
-    drop table(:eqemu_character_inventory)
-    drop table(:eqemu_zones)
-    drop table(:eqemu_items)
-    drop table(:eqemu_characters)
-    drop table(:eqemu_accounts)
+    drop table(:guild_members)
+    drop table(:guilds)
+    drop table(:character_inventory)
+    drop table(:character_stats)
+    drop table(:zones)
+    drop table(:items)
+    drop table(:characters)
+    drop table(:accounts)
     drop table(:users_tokens)
     drop table(:users)
   end
+
 end
